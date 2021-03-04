@@ -1,3 +1,4 @@
+import os
 import time
 
 import tensorflow as tf
@@ -61,7 +62,7 @@ class StyleContentModel(tf.keras.models.Model):
 
 
 class StyleTransfer(ImageHandler):
-    epochs = 10
+    epochs = 30
     style_weight = 1e-2
     content_weight = 1e4
     steps_per_epoch = 100
@@ -86,12 +87,12 @@ class StyleTransfer(ImageHandler):
     )
 
     @staticmethod
-    def high_pass_x_y(image):
+    def _high_pass_x_y(image):
         x_var = image[:, :, 1:, :] - image[:, :, :-1, :]
         y_var = image[:, 1:, :, :] - image[:, :-1, :, :]
         return x_var, y_var
 
-    def style_content_loss(self, outputs):
+    def _style_content_loss(self, outputs):
         style_outputs = outputs["style"]
         content_outputs = outputs["content"]
         style_loss = tf.add_n(
@@ -114,23 +115,25 @@ class StyleTransfer(ImageHandler):
         loss = style_loss + content_loss
         return loss
 
-    def clip_0_1(self, image):
+    @staticmethod
+    def _clip_0_1(image):
         return tf.clip_by_value(image, clip_value_min=0.0, clip_value_max=1.0)
 
-    def total_variation_loss(self, image):
-        x_deltas, y_deltas = self.high_pass_x_y(image)
+    def _total_variation_loss(self, image):
+        x_deltas, y_deltas = self._high_pass_x_y(image)
         return tf.reduce_sum(tf.abs(x_deltas)) + tf.reduce_sum(tf.abs(y_deltas))
 
     @tf.function()
-    def train_step(self, image):
+    def train_step(self, image, save: bool = False):
         with tf.GradientTape() as tape:
             outputs = self.extractor(image)
-            loss = self.style_content_loss(outputs)
+            loss = self._style_content_loss(outputs)
             loss += self.total_variation_weight * tf.image.total_variation(image)
-
+        # if save:
+        #
         grad = tape.gradient(loss, image)
         self.opt.apply_gradients([(grad, image)])
-        image.assign(self.clip_0_1(image))
+        image.assign(self._clip_0_1(image))
 
     def _train(self, image):
         step = 0
@@ -140,15 +143,15 @@ class StyleTransfer(ImageHandler):
                 step += 1
                 self.train_step(image)
                 print(".", end="")
-            self.tensor_to_image(image).save(f"row_image_step_{step}.png")
+            self.tensor_to_image(image).save(f"{self.m_path}/row_image_step_{step}.png")
             print(f"Train step: {step}")
         end = time.time()
         print(f"Total time: {end - start:.1f}")
 
     def _init_style_content(
         self,
-        content_path: str = content_path,
-        style_path: str = style_path,
+        content_path: str,
+        style_path: str,
         style_layers: list = style_layers,
         content_layers: list = content_layers,
     ):
@@ -163,17 +166,25 @@ class StyleTransfer(ImageHandler):
         self.opt = tf.optimizers.Adam(learning_rate=0.02, beta_1=0.99, epsilon=1e-1)
         self.vgg = tf.keras.applications.VGG19(include_top=False, weights="imagenet")
 
-    def __init__(self):
-        self._init_style_content()
-        self._init_nn()
-
-    def run(self):
+    def _init_target(self):
         self.extractor = StyleContentModel(self.style_layers, self.content_layers)
         self.style_targets = self.extractor(self.style_image)["style"]
         self.content_targets = self.extractor(self.content_image)["content"]
+
+    def __init__(self, m_name: str, content_path: str = content_path, style_path: str = style_path):
+        self.m_path = f"images/{m_name}"
+        os.makedirs(self.m_path)
+        self._init_style_content(content_path, style_path)
+        self._init_nn()
+        self._init_target()
+
+    def run(self, ret: bool = False, save: bool = True):
         image = tf.Variable(self.content_image)
         self._train(image)
-        self.tensor_to_image(image).save("stylized_w_variation_image.png")
-        self.total_variation_loss(image).numpy()
+        self.tensor_to_image(image).save(f"{self.m_path}/stylized_w_variation_image.png")
+        self._total_variation_loss(image).numpy()
         tf.image.total_variation(image).numpy()
-        self.tensor_to_image(image).save("stylized-image.png")
+        if save:
+            self.tensor_to_image(image).save(f"{self.m_path}/stylized-image.png")
+        if ret:
+            return image
