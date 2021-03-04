@@ -86,8 +86,9 @@ class ImageEnhancer:
 
     def enhance_image(self, image_path: str):
         hr_image = self._preprocess_image(image_path)
+        lr_image = self.downscale_image(hr_image)
         start = time.time()
-        fake_image = self.model(hr_image)
+        fake_image = self.model(lr_image)
         fake_image = tf.squeeze(fake_image)
         tf.cast(fake_image, tf.uint8)
         print(f"Time Taken: {time.time() - start}")
