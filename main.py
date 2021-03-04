@@ -17,7 +17,7 @@ def run_style_nn():
         r_content = random.choices(contents_list)
         r_style = random.choices(styles_list)
         s = StyleTransfer(
-            m_name=f"{r_style}_{i}",
+            m_name=f"{r_style[:-4]}_{i}",
             content_path=f"contents/{r_content}",
             style_path=f"styles/{r_style}",
         )
