@@ -14,8 +14,8 @@ def run_style_nn():
     contents_list = os.listdir("contents")
     styles_list = os.listdir("styles")
     for i in range(20):
-        r_content = random.choices(contents_list)
-        r_style = random.choices(styles_list)
+        r_content = random.choices(contents_list)[0]
+        r_style = random.choices(styles_list)[0]
         s = StyleTransfer(
             m_name=f"{r_style[:-4]}_{i}",
             content_path=f"contents/{r_content}",
