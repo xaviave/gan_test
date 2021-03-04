@@ -73,15 +73,15 @@ class StyleTransfer(ImageHandler):
     style_layers = [
         "block1_conv1",
         "block2_conv1",
-        # "block3_conv1",
+        "block3_conv1",
         "block4_conv1",
         "block5_conv1",
     ]
-    content_path = tf.keras.utils.get_file(
+    sample_content_path = tf.keras.utils.get_file(
         "YellowLabradorLooking_new.jpg",
         "https://storage.googleapis.com/download.tensorflow.org/example_images/YellowLabradorLooking_new.jpg",
     )
-    style_path = tf.keras.utils.get_file(
+    sample_style_path = tf.keras.utils.get_file(
         "kandinsky5.jpg",
         "https://storage.googleapis.com/download.tensorflow.org/example_images/Vassily_Kandinsky%2C_1913_-_Composition_7.jpg",
     )
@@ -175,12 +175,13 @@ class StyleTransfer(ImageHandler):
     def __init__(
         self,
         m_name: str,
-        content_path: str = content_path,
-        style_path: str = style_path,
+        content_path: str = sample_content_path,
+        style_path: str = sample_style_path,
     ):
         super().__init__()
         self.m_path = f"images/{m_name}"
         os.makedirs(self.m_path)
+        self.content_path = content_path
         self._init_style_content(content_path, style_path)
         self._init_nn()
         self._init_target()
