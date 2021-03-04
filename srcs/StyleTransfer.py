@@ -178,6 +178,7 @@ class StyleTransfer(ImageHandler):
         content_path: str = content_path,
         style_path: str = style_path,
     ):
+        super().__init__()
         self.m_path = f"images/{m_name}"
         os.makedirs(self.m_path)
         self._init_style_content(content_path, style_path)
