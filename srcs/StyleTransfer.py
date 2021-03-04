@@ -69,7 +69,7 @@ class StyleTransfer(ImageHandler):
     total_variation_weight = 50
 
     # sample tf
-    content_layers = ["block3_conv4", "block5_conv2"]
+    content_layers = ["block5_conv2"]
     style_layers = [
         "block1_conv1",
         "block2_conv1",
