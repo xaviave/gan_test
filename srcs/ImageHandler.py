@@ -27,8 +27,10 @@ class ImageHandler(ImageEnhancer):
         anim_file = f"{path}/images.gif"
         filenames = glob.glob(f"{path}/image*.png")
         filenames = sorted(filenames)
-        map(self.enhance_image, filenames)
         filenames.insert(0, original_file)
+        for x in filenames:
+            self.enhance_image(x)
+        print(filenames)
         img, *imgs = [PIL.Image.open(f) for f in sorted(filenames)]
         img.save(fp=anim_file, format='GIF', append_images=imgs,
                  save_all=True, duration=200, loop=0)
