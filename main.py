@@ -1,4 +1,5 @@
 import os
+import time
 import random
 
 from srcs.GanHandler import GanHandler
@@ -17,7 +18,7 @@ def run_style_nn():
         r_content = random.choices(contents_list)[0]
         r_style = random.choices(styles_list)[0]
         s = StyleTransfer(
-            m_name=f"{r_style[:-4]}_{i}",
+            m_name=f"{r_style[:-4]}_{i}_{time.time()}",
             content_path=f"contents/{r_content}",
             style_path=f"styles/{r_style}",
         )

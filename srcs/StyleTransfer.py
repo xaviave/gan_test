@@ -62,14 +62,14 @@ class StyleContentModel(tf.keras.models.Model):
 
 
 class StyleTransfer(ImageHandler):
-    epochs = 30
+    epochs = 150
     style_weight = 1e-2
     content_weight = 1e4
-    steps_per_epoch = 100
-    total_variation_weight = 30
+    steps_per_epoch = 50
+    total_variation_weight = 50
 
     # sample tf
-    content_layers = ["block5_conv2"]
+    content_layers = ["block3_conv4", "block5_conv2"]
     style_layers = [
         "block1_conv1",
         "block2_conv1",
