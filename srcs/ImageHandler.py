@@ -5,10 +5,11 @@ import PIL.Image
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
-import tensorflow_docs.vis.embed as embed
+
+from srcs.ImageEnhancer import ImageEnhancer
 
 
-class ImageHandler:
+class ImageHandler(ImageEnhancer):
     @staticmethod
     def generate_and_save_images(model, epoch, test_input):
         # Notice `training` is set to False.
@@ -22,18 +23,13 @@ class ImageHandler:
         plt.savefig("image_at_epoch_{:04d}.png".format(epoch))
         # plt.show()
 
-    @staticmethod
-    def save_gif():
-        anim_file = "dcgan.gif"
-        with imageio.get_writer(anim_file, mode="I") as writer:
-            filenames = glob.glob("image*.png")
-            filenames = sorted(filenames)
-            for filename in filenames:
-                image = imageio.imread(filename)
-                writer.append_data(image)
-            image = imageio.imread(filename)
-            writer.append_data(image)
-        embed.embed_file(anim_file)
+    def save_gif(self, path, original_file):
+        anim_file = f"{path}/images.gif"
+        filenames = glob.glob(f"{path}/image*.png")
+        filenames = sorted(filenames)
+        map(self.enhance_image, filenames)
+        filenames.insert(0, original_file)
+        imageio.mimsave(anim_file, filenames)
 
     @staticmethod
     def tensor_to_image(tensor):

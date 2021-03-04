@@ -73,7 +73,7 @@ class StyleTransfer(ImageHandler):
     style_layers = [
         "block1_conv1",
         "block2_conv1",
-        "block3_conv1",
+        # "block3_conv1",
         "block4_conv1",
         "block5_conv1",
     ]
@@ -139,12 +139,13 @@ class StyleTransfer(ImageHandler):
         step = 0
         start = time.time()
         for n in range(self.epochs):
+            start_e = time.time()
             for m in range(self.steps_per_epoch):
                 step += 1
                 self.train_step(image)
                 print(".", end="")
             self.tensor_to_image(image).save(f"{self.m_path}/row_image_step_{step}.png")
-            print(f"Train step: {step}")
+            print(f"\nTrain step: {step} | time epoch: {time.time() - start_e}")
         end = time.time()
         print(f"Total time: {end - start:.1f}")
 
@@ -171,7 +172,12 @@ class StyleTransfer(ImageHandler):
         self.style_targets = self.extractor(self.style_image)["style"]
         self.content_targets = self.extractor(self.content_image)["content"]
 
-    def __init__(self, m_name: str, content_path: str = content_path, style_path: str = style_path):
+    def __init__(
+        self,
+        m_name: str,
+        content_path: str = content_path,
+        style_path: str = style_path,
+    ):
         self.m_path = f"images/{m_name}"
         os.makedirs(self.m_path)
         self._init_style_content(content_path, style_path)
@@ -181,10 +187,10 @@ class StyleTransfer(ImageHandler):
     def run(self, ret: bool = False, save: bool = True):
         image = tf.Variable(self.content_image)
         self._train(image)
-        self.tensor_to_image(image).save(f"{self.m_path}/stylized_w_variation_image.png")
         self._total_variation_loss(image).numpy()
         tf.image.total_variation(image).numpy()
         if save:
             self.tensor_to_image(image).save(f"{self.m_path}/stylized-image.png")
+            self.save_gif(self.m_path, self.content_path)
         if ret:
             return image

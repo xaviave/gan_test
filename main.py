@@ -1,3 +1,6 @@
+import os
+import random
+
 from srcs.GanHandler import GanHandler
 from srcs.StyleTransfer import StyleTransfer
 
@@ -8,26 +11,17 @@ def run_mnist_gan():
 
 
 def run_style_nn():
-    s = StyleTransfer(m_name="default")
-    s.run()
-    s = StyleTransfer(m_name="style_1", style_path="styles/style_1.jpg")
-    s.run()
-    s = StyleTransfer(m_name="style_2", style_path="styles/style_2.jpg")
-    s.run()
-    s = StyleTransfer(m_name="style_3", style_path="styles/style_3.jpg")
-    s.run()
-    s = StyleTransfer(m_name="style_4", style_path="styles/style_4.jpg")
-    s.run()
-    s = StyleTransfer(m_name="style_5", style_path="styles/style_5.jpg")
-    s.run()
-    s = StyleTransfer(m_name="style_6", style_path="styles/style_6.jpg")
-    s.run()
-    s = StyleTransfer(m_name="style_7", style_path="styles/style_7.jpg")
-    s.run()
-    s = StyleTransfer(m_name="style_8", style_path="styles/style_8.jpg")
-    s.run()
-    s = StyleTransfer(m_name="style_9", style_path="styles/style_9.jpg")
-    s.run()
+    contents_list = os.listdir("contents")
+    styles_list = os.listdir("styles")
+    for i in range(20):
+        r_content = random.choices(contents_list)
+        r_style = random.choices(styles_list)
+        s = StyleTransfer(
+            m_name=f"{r_style}_{i}",
+            content_path=f"contents/{r_content}",
+            style_path=f"styles/{r_style}",
+        )
+        s.run()
 
 
 if __name__ == "__main__":
@@ -39,7 +33,6 @@ check:
     - tf.train.Checkpoint
     - tf.GradientTape
     - tensorflow_hub
-    - 
     """
     )
     # run_mnist_gan()
