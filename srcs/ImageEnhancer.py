@@ -72,7 +72,7 @@ class ImageEnhancer:
 
         lr_image = np.asarray(
             Image.fromarray(image.numpy()).resize(
-                [image_size[0] // 2, image_size[1] // 2], Image.BICUBIC
+                [image_size[0] // 4, image_size[1] // 4], Image.BICUBIC
             )
         )
 
