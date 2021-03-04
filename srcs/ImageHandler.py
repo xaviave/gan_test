@@ -10,6 +10,9 @@ from srcs.ImageEnhancer import ImageEnhancer
 
 
 class ImageHandler(ImageEnhancer):
+    def __init__(self):
+        super().__init__()
+
     @staticmethod
     def generate_and_save_images(model, epoch, test_input):
         # Notice `training` is set to False.
@@ -22,18 +25,6 @@ class ImageHandler(ImageEnhancer):
             plt.axis("off")
         plt.savefig("image_at_epoch_{:04d}.png".format(epoch))
         # plt.show()
-
-    def save_gif(self, path, original_file):
-        anim_file = f"{path}/images.gif"
-        filenames = glob.glob(f"{path}/image*.png")
-        filenames = sorted(filenames)
-        filenames.insert(0, original_file)
-        for x in filenames:
-            self.enhance_image(x)
-        print(filenames)
-        img, *imgs = [PIL.Image.open(f) for f in sorted(filenames)]
-        img.save(fp=anim_file, format='GIF', append_images=imgs,
-                 save_all=True, duration=200, loop=0)
 
     @staticmethod
     def tensor_to_image(tensor):
@@ -68,3 +59,16 @@ class ImageHandler(ImageEnhancer):
         plt.imshow(image)
         if title:
             plt.title(title)
+
+    def save_gif(self, path, original_file):
+        anim_file = f"{path}/images.gif"
+        filenames = glob.glob(f"{path}/image*.png")
+        filenames = sorted(filenames)
+        filenames.insert(0, original_file)
+        for x in filenames:
+            self.enhance_image(x)
+        print(filenames)
+        img, *imgs = [PIL.Image.open(f) for f in sorted(filenames)]
+        img.save(fp=anim_file, format='GIF', append_images=imgs,
+                 save_all=True, duration=200, loop=0)
+
