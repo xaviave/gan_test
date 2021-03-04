@@ -192,6 +192,7 @@ class StyleTransfer(ImageHandler):
         tf.image.total_variation(image).numpy()
         if save:
             self.tensor_to_image(image).save(f"{self.m_path}/stylized-image.png")
+            print(self.m_path, self.content_path)
             self.save_gif(self.m_path, self.content_path)
         if ret:
             return image

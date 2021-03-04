@@ -62,7 +62,7 @@ class ImageHandler(ImageEnhancer):
 
     def save_gif(self, path, original_file):
         anim_file = f"{path}/images.gif"
-        filenames = glob.glob(f"{path}/image*.png")
+        filenames = glob.glob(f"{path}/*.png")
         filenames = sorted(filenames)
         filenames.insert(0, original_file)
         for x in filenames:
