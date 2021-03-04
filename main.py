@@ -1,9 +1,15 @@
 from srcs.GanHandler import GanHandler
+from srcs.StyleTransfer import StyleTransfer
 
 
 def run_mnist_gan():
     gan = GanHandler()
-    gan.train()
+    gan.train(gan.dataset)
+
+
+def run_style_nn():
+    s = StyleTransfer()
+    s.run()
 
 
 if __name__ == "__main__":
@@ -18,4 +24,5 @@ check:
     - 
     """
     )
-    run_mnist_gan()
+    # run_mnist_gan()
+    run_style_nn()

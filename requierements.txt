@@ -1,0 +1,4 @@
+tensorflow
+tensorflow_gan
+tensorflow_datasets
+tensorflow_probability

@@ -2,7 +2,6 @@ import os
 import time
 
 import tensorflow as tf
-from IPython import display
 from tensorflow.keras import layers
 
 from srcs.ImageHandler import ImageHandler
@@ -145,23 +144,18 @@ class GanHandler(ImageHandler):
     def generator_loss(self, fake_output):
         return self.cross_entropy(tf.ones_like(fake_output), fake_output)
 
-    def train(self, epochs: int = EPOCHS):
+    def train(self, dataset, epochs: int = EPOCHS):
         seed = tf.random.normal([self.NUM_EX_TO_GENERATE, self.NOISE_DIM])
         for epoch in range(epochs):
             start = time.time()
-            for image_batch in self.dataset:
+            for image_batch in dataset:
                 self._train_step(image_batch)
-            # Produce images for the GIF as we go
-            display.clear_output(wait=True)
             self.generate_and_save_images(self.generator, epoch + 1, seed)
             # Save the model every 15 epochs
             if (epoch + 1) % 15 == 0:
                 self.checkpoint.save(file_prefix=self.checkpoint_prefix)
 
             print(f"Time for epoch {epoch + 1} is {time.time() - start} sec")
-
-        # Generate after the final epoch
-        display.clear_output(wait=True)
         self.generate_and_save_images(self.generator, epochs, seed)
         self.checkpoint.restore(tf.train.latest_checkpoint(self.checkpoint_dir))
 

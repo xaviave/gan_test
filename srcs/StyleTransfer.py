@@ -65,11 +65,30 @@ class StyleTransfer(ImageHandler):
     style_weight = 1e-2
     content_weight = 1e4
     steps_per_epoch = 100
+    total_variation_weight = 30
 
-    def high_pass_x_y(self, image):
+    # sample tf
+    content_layers = ["block5_conv2"]
+    style_layers = [
+        "block1_conv1",
+        "block2_conv1",
+        "block3_conv1",
+        "block4_conv1",
+        "block5_conv1",
+    ]
+    content_path = tf.keras.utils.get_file(
+        "YellowLabradorLooking_new.jpg",
+        "https://storage.googleapis.com/download.tensorflow.org/example_images/YellowLabradorLooking_new.jpg",
+    )
+    style_path = tf.keras.utils.get_file(
+        "kandinsky5.jpg",
+        "https://storage.googleapis.com/download.tensorflow.org/example_images/Vassily_Kandinsky%2C_1913_-_Composition_7.jpg",
+    )
+
+    @staticmethod
+    def high_pass_x_y(image):
         x_var = image[:, :, 1:, :] - image[:, :, :-1, :]
         y_var = image[:, 1:, :, :] - image[:, :-1, :, :]
-
         return x_var, y_var
 
     def style_content_loss(self, outputs):
@@ -123,79 +142,44 @@ class StyleTransfer(ImageHandler):
                 print(".", end="")
             display.clear_output(wait=True)
             display.display(ImageHandler().tensor_to_image(image))
-            print("Train step: {}".format(step))
+            print(f"Train step: {step}")
         end = time.time()
-        print("Total time: {:.1f}".format(end - start))
+        print(f"Total time: {end - start:.1f}")
 
-    def __init__(self):
-        self.content_path = tf.keras.utils.get_file(
-            "YellowLabradorLooking_new.jpg",
-            "https://storage.googleapis.com/download.tensorflow.org/example_images/YellowLabradorLooking_new.jpg",
-        )
-        self.style_path = tf.keras.utils.get_file(
-            "kandinsky5.jpg",
-            "https://storage.googleapis.com/download.tensorflow.org/example_images/Vassily_Kandinsky%2C_1913_-_Composition_7.jpg",
-        )
-        pass
-
-    def run(self):
-        self.style_image = self.load_img(self.style_path)
-        self.content_image = self.load_img(self.content_path)
-        self.content_layers = ["block5_conv2"]
-        self.style_layers = [
-            "block1_conv1",
-            "block2_conv1",
-            "block3_conv1",
-            "block4_conv1",
-            "block5_conv1",
-        ]
+    def _init_style_content(
+        self,
+        content_path: str = content_path,
+        style_path: str = style_path,
+        style_layers: list = style_layers,
+        content_layers: list = content_layers,
+    ):
+        self.style_image = self.load_img(style_path)
+        self.content_image = self.load_img(content_path)
+        self.content_layers = content_layers
+        self.style_layers = style_layers
         self.num_style_layers = len(self.style_layers)
         self.num_content_layers = len(self.content_layers)
 
-        self.vgg = tf.keras.applications.VGG19(include_top=False, weights="imagenet")
-        style_extractor = vgg_layers(self.style_layers)
-        self.style_outputs = style_extractor(self.style_image * 255)
-
-        self.extractor  = StyleContentModel(self.style_layers, self.content_layers)
-        self.results = self.extractor(tf.constant(self.content_image))
-
-        self.style_targets = self.extractor(self.style_image)["style"]
-        self.content_targets = self.extractor(self.content_image)["content"]
-
-        image = tf.Variable(self.content_image)
-
+    def _init_nn(self):
         self.opt = tf.optimizers.Adam(learning_rate=0.02, beta_1=0.99, epsilon=1e-1)
+        self.vgg = tf.keras.applications.VGG19(include_top=False, weights="imagenet")
 
-        self._train(image)
-        x_deltas, y_deltas = self.high_pass_x_y(self.content_image)
+    def __init__(self):
+        self._init_style_content()
+        self._init_nn()
 
+    def show_art(self, content_image, fig, pos):
+        x_deltas, y_deltas = self.high_pass_x_y(content_image)
         plt.figure(figsize=(14, 10))
-        plt.subplot(2, 2, 1)
-        ImageHandler().imshow(
-            self.clip_0_1(2 * y_deltas + 0.5), "Horizontal Deltas: Original"
-        )
+        plt.subplot(*fig, pos[0]["id"])
+        ImageHandler().imshow(self.clip_0_1(2 * y_deltas + 0.5), pos[0]["com"])
+        plt.subplot(*fig, pos[1]["id"])
+        ImageHandler().imshow(self.clip_0_1(2 * x_deltas + 0.5), pos[1]["com"])
 
-        plt.subplot(2, 2, 2)
-        ImageHandler().imshow(
-            self.clip_0_1(2 * x_deltas + 0.5), "Vertical Deltas: Original"
-        )
-
-        x_deltas, y_deltas = self.high_pass_x_y(image)
-
-        plt.subplot(2, 2, 3)
-        ImageHandler().imshow(
-            self.clip_0_1(2 * y_deltas + 0.5), "Horizontal Deltas: Styled"
-        )
-
-        plt.subplot(2, 2, 4)
-        ImageHandler().imshow(
-            self.clip_0_1(2 * x_deltas + 0.5), "Vertical Deltas: Styled"
-        )
-
+    def show_art_sobel(self, content_image, fig, pos):
+        sobel = tf.image.sobel_edges(content_image)
         plt.figure(figsize=(14, 10))
-
-        sobel = tf.image.sobel_edges(self.content_image)
-        plt.subplot(1, 2, 1)
+        plt.subplot(*fig, pos[0]["id"])
         ImageHandler().imshow(
             self.clip_0_1(sobel[..., 0] / 4 + 0.5), "Horizontal Sobel-edges"
         )
@@ -204,12 +188,43 @@ class StyleTransfer(ImageHandler):
             self.clip_0_1(sobel[..., 1] / 4 + 0.5), "Vertical Sobel-edges"
         )
 
+    def run(self):
+        self.extractor = StyleContentModel(self.style_layers, self.content_layers)
+        self.style_targets = self.extractor(self.style_image)["style"]
+        self.content_targets = self.extractor(self.content_image)["content"]
+        image = tf.Variable(self.content_image)
+        self._train(image)
+        self.show_art(
+            self.content_image,
+            [2, 2],
+            [
+                {"id": 1, "com": "Horizontal Deltas: Original"},
+                {"id": 2, "com": "Vertical Deltas: Original"},
+            ],
+        )
+        self.show_art(
+            image,
+            [2, 2],
+            [
+                {"id": 3, "com": "Horizontal Deltas: Styled"},
+                {"id": 4, "com": "Vertical Deltas: Styled"},
+            ],
+        )
+
+        self.show_art_sobel(
+            self.content_image,
+            [1, 2],
+            [
+                {"id": 1, "com": "Horizontal Sobel-edges"},
+                {"id": 2, "com": "Vertical Sobel-edges"},
+            ],
+        )
+        plt.subplot(1, 2, 1)
+        plt.show()
+
         self.total_variation_loss(image).numpy()
         tf.image.total_variation(image).numpy()
-        self.total_variation_weight = 30
 
         image = tf.Variable(self.content_image)
-
-        self._train(image)
         file_name = "stylized-image.png"
         ImageHandler().tensor_to_image(image).save(file_name)
