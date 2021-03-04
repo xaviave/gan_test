@@ -140,7 +140,7 @@ class StyleTransfer(ImageHandler):
                 step += 1
                 self.train_step(image)
                 print(".", end="")
-            ImageHandler().tensor_to_image(image).save(f"row_image_step_{step}.png")
+            self.tensor_to_image(image).save(f"row_image_step_{step}.png")
             print(f"Train step: {step}")
         end = time.time()
         print(f"Total time: {end - start:.1f}")
@@ -167,64 +167,13 @@ class StyleTransfer(ImageHandler):
         self._init_style_content()
         self._init_nn()
 
-    def show_art(self, content_image, fig, pos):
-        x_deltas, y_deltas = self.high_pass_x_y(content_image)
-        plt.figure(figsize=(14, 10))
-        plt.subplot(*fig, pos[0]["id"])
-        ImageHandler().imshow(self.clip_0_1(2 * y_deltas + 0.5), pos[0]["com"])
-        plt.subplot(*fig, pos[1]["id"])
-        ImageHandler().imshow(self.clip_0_1(2 * x_deltas + 0.5), pos[1]["com"])
-
-    def show_art_sobel(self, content_image, fig, pos):
-        sobel = tf.image.sobel_edges(content_image)
-        plt.figure(figsize=(14, 10))
-        plt.subplot(*fig, pos[0]["id"])
-        ImageHandler().imshow(
-            self.clip_0_1(sobel[..., 0] / 4 + 0.5), "Horizontal Sobel-edges"
-        )
-        plt.subplot(1, 2, 2)
-        ImageHandler().imshow(
-            self.clip_0_1(sobel[..., 1] / 4 + 0.5), "Vertical Sobel-edges"
-        )
-
     def run(self):
         self.extractor = StyleContentModel(self.style_layers, self.content_layers)
         self.style_targets = self.extractor(self.style_image)["style"]
         self.content_targets = self.extractor(self.content_image)["content"]
         image = tf.Variable(self.content_image)
         self._train(image)
-        self.show_art(
-            self.content_image,
-            [2, 2],
-            [
-                {"id": 1, "com": "Horizontal Deltas: Original"},
-                {"id": 2, "com": "Vertical Deltas: Original"},
-            ],
-        )
-        self.show_art(
-            image,
-            [2, 2],
-            [
-                {"id": 3, "com": "Horizontal Deltas: Styled"},
-                {"id": 4, "com": "Vertical Deltas: Styled"},
-            ],
-        )
-
-        self.show_art_sobel(
-            self.content_image,
-            [1, 2],
-            [
-                {"id": 1, "com": "Horizontal Sobel-edges"},
-                {"id": 2, "com": "Vertical Sobel-edges"},
-            ],
-        )
-        plt.subplot(1, 2, 1)
-        plt.show()
-
+        self.tensor_to_image(image).save("stylized_w_variation_image.png")
         self.total_variation_loss(image).numpy()
         tf.image.total_variation(image).numpy()
-
-        image = tf.Variable(self.content_image)
-        file_name = "stylized-image.png"
-        self.opt.apply_gradients()
-        ImageHandler().tensor_to_image(image).save(file_name)
+        self.tensor_to_image(image).save("stylized-image.png")
