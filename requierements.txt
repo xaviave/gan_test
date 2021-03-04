@@ -1,3 +1,4 @@
+natsort
 tensorflow
 tensorflow_gan
 tensorflow_datasets

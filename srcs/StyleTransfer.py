@@ -194,6 +194,6 @@ class StyleTransfer(ImageHandler):
         if save:
             self.tensor_to_image(image).save(f"{self.m_path}/stylized-image.png")
             print(self.m_path, self.content_path)
-            self.save_gif(self.m_path, self.content_path)
+            self.save_gif(self.m_path)
         if ret:
             return image

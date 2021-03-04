@@ -6,6 +6,7 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
+from natsort import natsorted
 from srcs.ImageEnhancer import ImageEnhancer
 
 
@@ -60,15 +61,12 @@ class ImageHandler(ImageEnhancer):
             tensor = tensor[0]
         return PIL.Image.fromarray(tensor)
 
-    def save_gif(self, path, original_file):
+    def save_gif(self, path):
         anim_file = f"{path}/images.gif"
         filenames = glob.glob(f"{path}/*.png")
-        filenames = sorted(filenames)
-        filenames.insert(0, original_file)
         for x in filenames:
             self.enhance_image(x)
-        print(filenames)
-        img, *imgs = [PIL.Image.open(f) for f in sorted(filenames)]
+        img, *imgs = [PIL.Image.open(f) for f in natsorted(filenames)]
         img.save(
             fp=anim_file,
             format="GIF",
