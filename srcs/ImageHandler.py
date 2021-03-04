@@ -29,6 +29,10 @@ class ImageHandler(ImageEnhancer):
         filenames = sorted(filenames)
         map(self.enhance_image, filenames)
         filenames.insert(0, original_file)
+        img, *imgs = [PIL.Image.open(f) for f in sorted(filenames)]
+        img.save(fp=anim_file, format='GIF', append_images=imgs,
+                 save_all=True, duration=200, loop=0)
+
         imageio.mimsave(anim_file, filenames)
 
     @staticmethod
