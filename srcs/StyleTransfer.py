@@ -140,8 +140,7 @@ class StyleTransfer(ImageHandler):
                 step += 1
                 self.train_step(image)
                 print(".", end="")
-            display.clear_output(wait=True)
-            display.display(ImageHandler().tensor_to_image(image))
+            ImageHandler().tensor_to_image(image).save(f"row_image_step_{step}.png")
             print(f"Train step: {step}")
         end = time.time()
         print(f"Total time: {end - start:.1f}")
@@ -227,4 +226,5 @@ class StyleTransfer(ImageHandler):
 
         image = tf.Variable(self.content_image)
         file_name = "stylized-image.png"
+        self.opt.apply_gradients()
         ImageHandler().tensor_to_image(image).save(file_name)
