@@ -33,8 +33,6 @@ class ImageHandler(ImageEnhancer):
         img.save(fp=anim_file, format='GIF', append_images=imgs,
                  save_all=True, duration=200, loop=0)
 
-        imageio.mimsave(anim_file, filenames)
-
     @staticmethod
     def tensor_to_image(tensor):
         tensor = tensor * 255
