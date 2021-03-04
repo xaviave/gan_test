@@ -55,6 +55,31 @@ class ImageEnhancer:
         plt.axis("off")
         plt.title(title)
 
+    @staticmethod
+    def downscale_image(image):
+        """
+        Scales down images using bicubic downsampling.
+        Args:
+            image: 3D or 4D tensor of preprocessed image
+        """
+        image_size = []
+        if len(image.shape) == 3:
+            image_size = [image.shape[1], image.shape[0]]
+        else:
+            raise ValueError("Dimension mismatch. Can work only on single image.")
+
+        image = tf.squeeze(tf.cast(tf.clip_by_value(image, 0, 255), tf.uint8))
+
+        lr_image = np.asarray(
+            Image.fromarray(image.numpy()).resize(
+                [image_size[0] // 4, image_size[1] // 4], Image.BICUBIC
+            )
+        )
+
+        lr_image = tf.expand_dims(lr_image, 0)
+        lr_image = tf.cast(lr_image, tf.float32)
+        return lr_image
+
     def __init__(self):
         os.environ["TFHUB_DOWNLOAD_PROGRESS"] = "True"
         self.model = hub.load(self.SAVED_MODEL_PATH)
@@ -64,5 +89,6 @@ class ImageEnhancer:
         start = time.time()
         fake_image = self.model(hr_image)
         fake_image = tf.squeeze(fake_image)
+        tf.cast(fake_image, tf.uint8)
         print(f"Time Taken: {time.time() - start}")
         self.save_image(tf.squeeze(fake_image), filename=image_path)

@@ -27,15 +27,6 @@ class ImageHandler(ImageEnhancer):
         # plt.show()
 
     @staticmethod
-    def tensor_to_image(tensor):
-        tensor = tensor * 255
-        tensor = np.array(tensor, dtype=np.uint8)
-        if np.ndim(tensor) > 3:
-            assert tensor.shape[0] == 1
-            tensor = tensor[0]
-        return PIL.Image.fromarray(tensor)
-
-    @staticmethod
     def load_img(path_to_img):
         max_dim = 512
         img = tf.io.read_file(path_to_img)
@@ -60,6 +51,14 @@ class ImageHandler(ImageEnhancer):
         if title:
             plt.title(title)
 
+    def tensor_to_image(self, tensor):
+        tensor = tensor * 255
+        tensor = np.array(tensor, dtype=np.uint8)
+        if np.ndim(tensor) > 3:
+            assert tensor.shape[0] == 1
+            tensor = tensor[0]
+        return self.downscale_image(PIL.Image.fromarray(tensor))
+
     def save_gif(self, path, original_file):
         anim_file = f"{path}/images.gif"
         filenames = glob.glob(f"{path}/image*.png")
@@ -69,6 +68,11 @@ class ImageHandler(ImageEnhancer):
             self.enhance_image(x)
         print(filenames)
         img, *imgs = [PIL.Image.open(f) for f in sorted(filenames)]
-        img.save(fp=anim_file, format='GIF', append_images=imgs,
-                 save_all=True, duration=200, loop=0)
-
+        img.save(
+            fp=anim_file,
+            format="GIF",
+            append_images=imgs,
+            save_all=True,
+            duration=200,
+            loop=0,
+        )
