@@ -35,7 +35,11 @@ def run_deepdream():
         step_size = random.uniform(0.01, 0.99)
         octave_scale = random.uniform(0.5, 3.0)
         steps_per_octave = random.randint(20, 200)
-        deepdream.args.img_name = f"{r_content}-{octaves}-{step_size}-{octave_scale}-{steps_per_octave}".replace(".", "_")
+        deepdream.args.img_name = f"{r_content}-{octaves}-{step_size}-{octave_scale}-{steps_per_octave}".replace(
+            ".", "_"
+        ).replace(
+            " ", ""
+        )
         deepdream.run(f"contents/{r_content}")
 
 
