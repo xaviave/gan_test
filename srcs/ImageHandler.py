@@ -28,6 +28,17 @@ class ImageHandler(ImageEnhancer):
         # plt.show()
 
     @staticmethod
+    def get_img(img_path):
+        img = PIL.Image.open(img_path)
+        img = np.array(img)
+        return img[:, :, :3]
+
+    @staticmethod
+    def normalize_img(img):
+        img = 255 * (img + 1.0) / 2.0
+        return tf.cast(img, tf.uint8)
+
+    @staticmethod
     def load_img(path_to_img):
         max_dim = 512
         img = tf.io.read_file(path_to_img)
@@ -72,6 +83,6 @@ class ImageHandler(ImageEnhancer):
             format="GIF",
             append_images=imgs,
             save_all=True,
-            duration=200,
+            duration=50,
             loop=0,
         )

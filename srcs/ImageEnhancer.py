@@ -85,6 +85,9 @@ class ImageEnhancer:
         self.model = hub.load(self.SAVED_MODEL_PATH)
 
     def enhance_image(self, image_path: str):
+        """
+        https://www.tensorflow.org/hub/tutorials/image_enhancing
+        """
         hr_image = self._preprocess_image(image_path)
         lr_image = self.downscale_image(tf.squeeze(hr_image))
         start = time.time()

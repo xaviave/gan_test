@@ -178,6 +178,9 @@ class StyleTransfer(ImageHandler):
         content_path: str = sample_content_path,
         style_path: str = sample_style_path,
     ):
+        """
+        https://www.tensorflow.org/tutorials/generative/style_transfer
+        """
         super().__init__()
         self.m_path = f"images/{m_name}"
         os.makedirs(self.m_path)
@@ -189,11 +192,7 @@ class StyleTransfer(ImageHandler):
     def run(self, ret: bool = False, save: bool = True):
         image = tf.Variable(self.content_image)
         self._train(image)
-        self._total_variation_loss(image).numpy()
-        tf.image.total_variation(image).numpy()
         if save:
             self.tensor_to_image(image).save(f"{self.m_path}/stylized-image.png")
-            print(self.m_path, self.content_path)
-            self.save_gif(self.m_path)
         if ret:
             return image
