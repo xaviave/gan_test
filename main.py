@@ -2,6 +2,8 @@ import os
 import time
 import random
 
+from natsort import natsorted
+
 from srcs.generative.DeepDream import DeepDream
 from srcs.generative.GanHandler import GanHandler
 from srcs.generative.StyleTransfer import StyleTransfer
@@ -13,8 +15,8 @@ def run_mnist_gan():
 
 
 def run_style_nn():
-    contents_list = os.listdir("contents")
     styles_list = os.listdir("styles")
+    contents_list = os.listdir("contents")
     for i in range(1):
         r_content = random.randrange(len(contents_list))
         r_style = random.randrange(len(styles_list))
@@ -28,21 +30,11 @@ def run_style_nn():
 
 def run_deepdream():
     deepdream = DeepDream()
-    layers_list = deepdream.m_.layers
+    os.mkdir(f"{deepdream.args.layers[0]}_{deepdream.args.layers[1]}")
     contents_list = os.listdir("contents")
     for i in range(20):
-        a = random.randint(2, len(layers_list) // 3)
+        deepdream.args.img_name = f"{deepdream.args.layers[0]}_{deepdream.args.layers[1]}/img_{i}"
         r_content = contents_list[random.randrange(len(contents_list))]
-        deepdream.args.octaves = range(random.randint(-5, 5), random.randint(-5, 5))
-        deepdream.args.step_size = random.uniform(0.01, 0.99)
-        deepdream.args.octave_scale = random.uniform(0.5, 3.0)
-        deepdream.args.steps_per_octave = random.randint(20, 200)
-        deepdream.args.layers = [layers_list[random.randrange(len(contents_list))].name for _ in a]
-        deepdream.args.img_name = f"{r_content}-{deepdream.args.octaves}-{deepdream.args.step_size}-{deepdream.args.octave_scale}-{deepdream.args.steps_per_octave}-{deepdream.args.layers}".replace(
-            ".", "_"
-        ).replace(
-            " ", ""
-        )
         deepdream.run(f"contents/{r_content}")
 
 

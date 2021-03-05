@@ -13,7 +13,6 @@ class DeepDream(ArgParser, ImageHandler):
     """
     https://www.tensorflow.org/tutorials/generative/deepdream
     """
-
     layers: list
     octaves: list
     step_size: float

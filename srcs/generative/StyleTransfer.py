@@ -3,6 +3,7 @@ import time
 
 import tensorflow as tf
 
+from srcs.args.ArgParser import ArgParser
 from srcs.tools.ImageHandler import ImageHandler
 
 
@@ -35,7 +36,9 @@ class StyleContentModel(tf.keras.models.Model):
         self.vgg.trainable = False
 
     def call(self, inputs):
-        "Expects float input in [0,1]"
+        """
+        Expects float input in [0,1]
+        """
         inputs = inputs * 255.0
         preprocessed_input = tf.keras.applications.vgg19.preprocess_input(inputs)
         outputs = self.vgg(preprocessed_input)
@@ -59,13 +62,7 @@ class StyleContentModel(tf.keras.models.Model):
         return {"content": content_dict, "style": style_dict}
 
 
-class StyleTransfer(ImageHandler):
-    epochs = 150
-    style_weight = 1e-2
-    content_weight = 1e4
-    steps_per_epoch = 50
-    total_variation_weight = 50
-
+class StyleTransfer(ArgParser, ImageHandler):
     # sample tf
     content_layers = ["block5_conv2"]
     style_layers = [
@@ -84,6 +81,77 @@ class StyleTransfer(ImageHandler):
         "https://storage.googleapis.com/download.tensorflow.org/example_images/Vassily_Kandinsky%2C_1913_-_Composition_7.jpg",
     )
 
+    def _model_args(self, parser):
+        parser.add_argument(
+            "-stvw",
+            "--styletransfer_variation_weight",
+            type=int,
+            help=f"Variation weight between content and style",
+            default=50,
+            dest="variation_weight",
+        )
+        parser.add_argument(
+            "-stcw",
+            "--styletransfer_content_weight",
+            type=float,
+            help=f"Weight applied on the content image",
+            default=1e4,
+            dest="content_weight",
+        )
+        parser.add_argument(
+            "-stsw",
+            "--styletransfer_style_weight",
+            type=float,
+            help=f"Weight applied on the style image",
+            default=1e-2,
+            dest="style_weight",
+        )
+        parser.add_argument(
+            "-ste",
+            "--styletransfer_epochs",
+            type=int,
+            help=f"Number of epoch",
+            default=10,
+            dest="epochs",
+        )
+        parser.add_argument(
+            "-stse",
+            "--styletransfer_step_epochs",
+            type=int,
+            help=f"Number of steps in epoch",
+            default=150,
+            dest="step_in_epochs",
+        )
+
+    def _add_parser_args(self, parser):
+        super()._add_parser_args(parser)
+        parser.add_argument(
+            "-stss",
+            "--styletransfer_show_step",
+            type=bool,
+            help=f"Show img while model iterations",
+            default=False,
+            dest="show_step",
+        )
+        parser.add_argument(
+            "-stsi",
+            "--styletransfer_save_image",
+            type=str,
+            help=f"Image filename [if a filename is provided, the file is saved]",
+            default=None,
+            dest="img_name",
+        )
+        parser.add_argument(
+            "-stls",
+            "--styletransfer_layers",
+            type=str,
+            nargs="+",
+            help=f"StyleTransfer model is created based VGG19 model's layers\nList of Layers in model: {' - '.join([l.name for l in self.m_.layers])}",
+            default=["mixed3", "mixed5"],
+            dest="layers",
+        )
+        self._model_args(parser)
+
     @staticmethod
     def _high_pass_x_y(image):
         x_var = image[:, :, 1:, :] - image[:, :, :-1, :]
@@ -99,7 +167,7 @@ class StyleTransfer(ImageHandler):
                 for name in style_outputs.keys()
             ]
         )
-        style_loss *= self.style_weight / self.num_style_layers
+        style_loss *= self.args.style_weight / self.num_style_layers
 
         content_loss = tf.add_n(
             [
@@ -109,7 +177,7 @@ class StyleTransfer(ImageHandler):
                 for name in content_outputs.keys()
             ]
         )
-        content_loss *= self.content_weight / self.num_content_layers
+        content_loss *= self.args.content_weight / self.num_content_layers
         loss = style_loss + content_loss
         return loss
 
@@ -126,7 +194,7 @@ class StyleTransfer(ImageHandler):
         with tf.GradientTape() as tape:
             outputs = self.extractor(image)
             loss = self._style_content_loss(outputs)
-            loss += self.total_variation_weight * tf.image.total_variation(image)
+            loss += self.args.total_variation_weight * tf.image.total_variation(image)
         # if save:
         #
         grad = tape.gradient(loss, image)
@@ -136,9 +204,9 @@ class StyleTransfer(ImageHandler):
     def _train(self, image):
         step = 0
         start = time.time()
-        for n in range(self.epochs):
+        for n in range(self.args.epochs):
             start_e = time.time()
-            for m in range(self.steps_per_epoch):
+            for m in range(self.args.steps_per_epoch):
                 step += 1
                 self.train_step(image)
                 print(".", end="")
@@ -149,15 +217,13 @@ class StyleTransfer(ImageHandler):
 
     def _init_style_content(
         self,
-        content_path: str,
         style_path: str,
-        style_layers: list = style_layers,
-        content_layers: list = content_layers,
+        content_path: str,
     ):
         self.style_image = self.load_img(style_path)
         self.content_image = self.load_img(content_path)
-        self.content_layers = content_layers
-        self.style_layers = style_layers
+        self.content_layers = self.args.content_layers
+        self.style_layers = self.args.style_layers
         self.num_style_layers = len(self.style_layers)
         self.num_content_layers = len(self.content_layers)
 
@@ -183,7 +249,7 @@ class StyleTransfer(ImageHandler):
         self.m_path = f"images/{m_name}"
         os.makedirs(self.m_path)
         self.content_path = content_path
-        self._init_style_content(content_path, style_path)
+        self._init_style_content(style_path, content_path)
         self._init_nn()
         self._init_target()
 
