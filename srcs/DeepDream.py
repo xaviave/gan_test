@@ -12,9 +12,6 @@ class DeepDream(ImageHandler):
     """
     https://www.tensorflow.org/tutorials/generative/deepdream
     """
-
-    OCTAVE_SCALE = 1.30
-    url = "https://storage.googleapis.com/download.tensorflow.org/example_images/YellowLabradorLooking_new.jpg"
     layers_names = ["mixed3", "mixed5"]
 
     @staticmethod

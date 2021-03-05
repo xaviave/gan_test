@@ -31,7 +31,7 @@ class ImageHandler(ImageEnhancer):
     def get_img(img_path):
         img = PIL.Image.open(img_path)
         img = np.array(img)
-        return img[:, :, :3]
+        return img[:, :, :-3]
 
     @staticmethod
     def normalize_img(img):
