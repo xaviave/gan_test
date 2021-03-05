@@ -16,19 +16,22 @@ def run_style_nn():
     contents_list = os.listdir("contents")
     styles_list = os.listdir("styles")
     for i in range(1):
-        r_content = random.choices(contents_list)[0]
-        r_style = random.choices(styles_list)[0]
+        r_content = random.randrange(len(contents_list))
+        r_style = random.randrange(len(styles_list))
         s = StyleTransfer(
             m_name=f"{r_style[:-4]}_{i}_{time.time()}",
-            content_path=f"contents/{r_content}",
-            style_path=f"styles/{r_style}",
+            content_path=f"contents/{contents_list[r_content]}",
+            style_path=f"styles/{styles_list[r_style]}",
         )
         s.run()
 
 
 def run_deepdream():
     deepdream = DeepDream()
-    deepdream.run("contents/20201102_142043.png")
+    contents_list = os.listdir("contents")
+    for i in range(20):
+        r_content = random.randrange(len(contents_list))
+        deepdream.run(contents_list[r_content])
 
 
 if __name__ == "__main__":

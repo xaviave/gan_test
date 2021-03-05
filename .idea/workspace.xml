@@ -21,7 +21,7 @@
   <component name="ChangeListManager">
     <list default="true" id="cc319548-fc64-4a72-bace-37df3f8fb9b6" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/srcs/DeepDream.py" beforeDir="false" afterPath="$PROJECT_DIR$/srcs/DeepDream.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -99,7 +99,7 @@
       <workItem from="1614850280301" duration="6927000" />
       <workItem from="1614863716293" duration="8492000" />
       <workItem from="1614933937100" duration="9599000" />
-      <workItem from="1614945771152" duration="557000" />
+      <workItem from="1614945771152" duration="2011000" />
     </task>
     <servers />
   </component>
