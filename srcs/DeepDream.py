@@ -126,5 +126,5 @@ class DeepDream(ImageHandler):
         img = self.run_deep_dream_with_octaves(img=original_img, step_size=0.01)
 
         img = tf.image.resize(img, tf.shape(original_img)[:-1])
-        img = tf.image.convert_image_dtype(255.0 - (img / 255.0), dtype=tf.uint8)
+        img = tf.image.convert_image_dtype(img / 255.0, dtype=tf.uint8)
         self.tensor_to_image(img).save(f"{time.time()}.jpg")
