@@ -90,7 +90,7 @@ class DeepDream(ImageHandler):
     def run_deep_dream_with_octaves(
         self,
         img,
-        steps_per_octave=100,
+        steps_per_octave=50,
         step_size=0.01,
         octaves=range(-2, 3),
         octave_scale=1.3,
@@ -125,6 +125,6 @@ class DeepDream(ImageHandler):
         original_img = self.get_img(img_path)
         img = self.run_deep_dream_with_octaves(img=original_img, step_size=0.01)
 
-        img = tf.image.resize(img, tf.shape(original_img)[:-1])
+        img = tf.image.resize(img, tf.shape(original_img))
         img = tf.image.convert_image_dtype(img / 255.0, dtype=tf.uint8)
         self.tensor_to_image(img).save(f"{time.time()}.jpg")
