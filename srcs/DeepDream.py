@@ -132,4 +132,4 @@ class DeepDream(ImageHandler):
         plt.show()
         img = tf.image.resize(img, base_shape)
         img = tf.image.convert_image_dtype(img / 255.0, dtype=tf.uint8)
-        img.save(f"{time.time()}.png")
+        PIL.Image.fromarray(img).save(f"{time.time()}.png")
