@@ -132,5 +132,4 @@ class DeepDream(ImageHandler):
         plt.show()
         img = tf.image.resize(img, base_shape)
         img = tf.image.convert_image_dtype(img / 255.0, dtype=tf.uint8)
-        img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-        self.tensor_to_image(img).save(f"{time.time()}.jpg")
+        img.save(f"{time.time()}.png")
