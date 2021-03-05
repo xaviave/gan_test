@@ -31,7 +31,7 @@ def run_deepdream():
     contents_list = os.listdir("contents")
     for i in range(20):
         r_content = random.randrange(len(contents_list))
-        deepdream.run(contents_list[r_content])
+        deepdream.run(f"contents/{contents_list[r_content]}")
 
 
 if __name__ == "__main__":
