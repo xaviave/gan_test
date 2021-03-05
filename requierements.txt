@@ -1,4 +1,5 @@
 natsort
+opencv-python
 tensorflow
 tensorflow_gan
 tensorflow_datasets
