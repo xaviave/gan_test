@@ -127,7 +127,7 @@ class DeepDream(ImageHandler):
         original_img = self.get_img(img_path)
         img = self.run_deep_dream_with_octaves(img=original_img, step_size=0.01)
 
-        img = tf.image.resize(img, *original_img.shape[:2])
+        img = tf.image.resize(img, tf.cast(*original_img[:2], tf.int32))
         img = tf.image.convert_image_dtype(img / 255.0, dtype=tf.uint8)
         plt.imshow(img)
         plt.show()
