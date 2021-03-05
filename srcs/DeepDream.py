@@ -119,12 +119,16 @@ class DeepDream(ImageHandler):
                     print(f"Octave {octave} | Step {step}")
             print(time.time() - start)
         result = self.normalize_img(img)
+        plt.imshow(result)
+        plt.show()
         return result
 
     def run(self, img_path):
-        original_img = self.get_img(img_path)
+        original_img = tf.constant(self.get_img(img_path))
+        base_shape = tf.shape(original_img)[:-1]
         img = self.run_deep_dream_with_octaves(img=original_img, step_size=0.01)
-
-        img = tf.image.resize(img, tf.shape(original_img))
+        plt.imshow(img)
+        plt.show()
+        img = tf.image.resize(img, base_shape)
         img = tf.image.convert_image_dtype(img / 255.0, dtype=tf.uint8)
         self.tensor_to_image(img).save(f"{time.time()}.jpg")
