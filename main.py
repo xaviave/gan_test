@@ -28,14 +28,17 @@ def run_style_nn():
 
 def run_deepdream():
     deepdream = DeepDream()
+    layers_list = deepdream.m_.layers
     contents_list = os.listdir("contents")
     for i in range(20):
+        a = random.randint(2, len(layers_list) // 3)
         r_content = contents_list[random.randrange(len(contents_list))]
-        octaves = range(random.randint(-5, 5), random.randint(-5, 5))
-        step_size = random.uniform(0.01, 0.99)
-        octave_scale = random.uniform(0.5, 3.0)
-        steps_per_octave = random.randint(20, 200)
-        deepdream.args.img_name = f"{r_content}-{octaves}-{step_size}-{octave_scale}-{steps_per_octave}".replace(
+        deepdream.args.octaves = range(random.randint(-5, 5), random.randint(-5, 5))
+        deepdream.args.step_size = random.uniform(0.01, 0.99)
+        deepdream.args.octave_scale = random.uniform(0.5, 3.0)
+        deepdream.args.steps_per_octave = random.randint(20, 200)
+        deepdream.args.layers = [layers_list[random.randrange(len(contents_list))].name for _ in a]
+        deepdream.args.img_name = f"{r_content}-{deepdream.args.octaves}-{deepdream.args.step_size}-{deepdream.args.octave_scale}-{deepdream.args.steps_per_octave}-{deepdream.args.layers}".replace(
             ".", "_"
         ).replace(
             " ", ""

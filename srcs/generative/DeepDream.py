@@ -149,7 +149,6 @@ class DeepDream(ArgParser, ImageHandler):
             include_top=False, weights="imagenet"
         )
         super().__init__(prog="DeepDream")
-        print(self.args.layers)
         layers = [self.m_.get_layer(name).output for name in self.args.layers]
         self.model = tf.keras.Model(inputs=self.m_.input, outputs=layers)
 
