@@ -129,5 +129,4 @@ class DeepDream(ImageHandler):
 
         img = tf.image.resize(img, tf.shape(original_img)[:-1])
         img = tf.image.convert_image_dtype(img / 255.0, dtype=tf.uint8)
-        plt.imshow(img)
-        plt.show()
+        self.tensor_to_image(img).save(f"{time.time()}.jpg")
