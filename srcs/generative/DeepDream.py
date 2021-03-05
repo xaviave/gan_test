@@ -1,4 +1,3 @@
-import cv2
 import time
 import PIL.Image
 
@@ -6,15 +5,84 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
-from srcs.ImageHandler import ImageHandler
+from srcs.args.ArgParser import ArgParser
+from srcs.tools.ImageHandler import ImageHandler
 
 
-class DeepDream(ImageHandler):
+class DeepDream(ArgParser, ImageHandler):
     """
     https://www.tensorflow.org/tutorials/generative/deepdream
     """
 
-    layers_names = ["mixed3", "mixed5"]
+    layers: list
+    octaves: list = [-2, -1, 0, 1, 2]
+    step_size: float = 0.01
+    steps_per_octave: int = 50
+    octave_scale: float = 1.3
+
+    def _model_args(self, parser):
+        parser.add_argument(
+            "-dds",
+            "--deepdream_step_size",
+            type=float,
+            help=f"Gradient Descent step size",
+            default=1e-2,
+            dest="step_size",
+        )
+        parser.add_argument(
+            "-ddos",
+            "--deepdream_octave_scale",
+            type=float,
+            help=f"Octave scaling",
+            default=1.3,
+            dest="octave_scale",
+        )
+        parser.add_argument(
+            "-ddo",
+            "--deepdream_octaves",
+            type=list,
+            nargs="+",
+            help=f"List of octaves iterations",
+            default=range(-2, 3),
+            dest="octaves",
+        )
+        parser.add_argument(
+            "-dde",
+            "--deepdream_epochs",
+            type=int,
+            help=f"Number of epoch in each octaves",
+            default=100,
+            dest="epochs",
+        )
+
+    def _add_parser_args(self, parser):
+        super()._add_parser_args(parser)
+        parser.add_argument(
+            "-ddss",
+            "--deepdream_show_step",
+            type=bool,
+            help=f"Show img while model iterations",
+            default=False,
+            dest="show_step",
+        )
+        parser.add_argument(
+            "-ddsi",
+            "--deepdream_save_image",
+            type=str,
+            help=f"Image filename [if a filename is provided, the file is saved]",
+            default=None,
+            dest="img_name",
+        )
+        parser.add_argument(
+            "-ddls",
+            "--deepdream_layers",
+            type=list,
+            nargs="+",
+            help=f"DeepDream model is created based InceptionV3 model's layers\nList of Layers in model: {' - '.join([l.name for l in self.m_.layers])}",
+            default=["mixed3", "mixed5"],
+            dest="layers",
+        )
+        self._model_args(parser)
 
     @staticmethod
     def _random_roll(img, maxroll):
@@ -26,18 +94,12 @@ class DeepDream(ImageHandler):
 
     @staticmethod
     def _calc_loss(img, model):
-        # Pass forward the image through the model to retrieve the activations.
-        # Converts the image into a batch of size 1.
         img_batch = tf.expand_dims(img, axis=0)
         layer_activations = model(img_batch)
         if len(layer_activations) == 1:
             layer_activations = [layer_activations]
 
-        losses = []
-        for act in layer_activations:
-            loss = tf.math.reduce_mean(act)
-            losses.append(loss)
-
+        losses = [tf.math.reduce_mean(act) for act in layer_activations]
         return tf.reduce_sum(losses)
 
     @tf.function(
@@ -83,18 +145,20 @@ class DeepDream(ImageHandler):
         return gradients
 
     def __init__(self):
-        super().__init__()
-        m_ = tf.keras.applications.InceptionV3(include_top=False, weights="imagenet")
-        layers = [m_.get_layer(name).output for name in self.layers_names]
-        self.model = tf.keras.Model(inputs=m_.input, outputs=layers)
+        self.m_ = tf.keras.applications.InceptionV3(
+            include_top=False, weights="imagenet"
+        )
+        super().__init__(prog="DeepDream")
+        layers = [self.m_.get_layer(name).output for name in self.args.layers]
+        self.model = tf.keras.Model(inputs=self.m_.input, outputs=layers)
 
-    def run_deep_dream_with_octaves(
+    def _run(
         self,
         img,
-        steps_per_octave=50,
-        step_size=0.01,
-        octaves=range(-2, 3),
-        octave_scale=1.3,
+        octaves: list,
+        step_size: float,
+        octave_scale: int,
+        steps_per_octave: int,
     ):
         base_shape = tf.shape(img)
         img = tf.keras.preprocessing.image.img_to_array(img)
@@ -114,22 +178,23 @@ class DeepDream(ImageHandler):
                 gradients = self._exec(img)
                 img = img + gradients * step_size
                 img = tf.clip_by_value(img, -1, 1)
-
-                if step % 10 == 0:
-                    # save point
-                    print(f"Octave {octave} | Step {step}")
-            print(time.time() - start)
+            if self.args.show_step:
+                plt.imshow(img)
+                plt.show()
+            print(f"time: {time.time() - start:.2f}s")
         result = self.normalize_img(img)
-        plt.imshow(result)
-        plt.show()
         return result
 
     def run(self, img_path):
         original_img = tf.constant(self.get_img(img_path))
-        base_shape = tf.shape(original_img)[:-1]
-        img = self.run_deep_dream_with_octaves(img=original_img, step_size=0.01)
-        plt.imshow(img)
-        plt.show()
-        img = tf.image.resize(img, base_shape)
-        img = tf.image.convert_image_dtype(img / 255.0, dtype=tf.uint8)
-        PIL.Image.fromarray(np.array(img)).save(f"{time.time()}.png")
+        dd_img = self._run(
+            img=original_img,
+            octaves=self.args.octaves,
+            step_size=self.args.step_size,
+            octave_scale=self.args.octave_scale,
+            steps_per_octave=self.args.epochs,
+        )
+        if self.args.img_name is not None:
+            dd_img = tf.image.resize(dd_img, tf.shape(original_img)[:-1])
+            dd_img = tf.image.convert_image_dtype(dd_img / 255.0, dtype=tf.uint8)
+            PIL.Image.fromarray(np.array(dd_img)).save(f"{self.args.img_name}.png")

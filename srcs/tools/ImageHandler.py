@@ -1,5 +1,4 @@
 import glob
-import imageio
 import PIL.Image
 
 import numpy as np
@@ -7,7 +6,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 
 from natsort import natsorted
-from srcs.ImageEnhancer import ImageEnhancer
+from srcs.tools.ImageEnhancer import ImageEnhancer
 
 
 class ImageHandler(ImageEnhancer):

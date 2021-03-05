@@ -2,9 +2,9 @@ import os
 import time
 import random
 
-from srcs.DeepDream import DeepDream
-from srcs.GanHandler import GanHandler
-from srcs.StyleTransfer import StyleTransfer
+from srcs.generative.DeepDream import DeepDream
+from srcs.generative.GanHandler import GanHandler
+from srcs.generative.StyleTransfer import StyleTransfer
 
 
 def run_mnist_gan():

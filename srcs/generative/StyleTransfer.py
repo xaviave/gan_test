@@ -2,10 +2,8 @@ import os
 import time
 
 import tensorflow as tf
-import matplotlib.pyplot as plt
-import IPython.display as display
 
-from srcs.ImageHandler import ImageHandler
+from srcs.tools.ImageHandler import ImageHandler
 
 
 def gram_matrix(input_tensor):

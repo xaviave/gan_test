@@ -4,7 +4,7 @@ import time
 import tensorflow as tf
 from tensorflow.keras import layers
 
-from srcs.ImageHandler import ImageHandler
+from srcs.tools.ImageHandler import ImageHandler
 
 
 class GanHandler(ImageHandler):
