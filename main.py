@@ -30,8 +30,13 @@ def run_deepdream():
     deepdream = DeepDream()
     contents_list = os.listdir("contents")
     for i in range(20):
-        r_content = random.randrange(len(contents_list))
-        deepdream.run(f"contents/{contents_list[r_content]}")
+        r_content = contents_list[random.randrange(len(contents_list))]
+        octaves = range(random.randint(-5, 5), random.randint(-5, 5))
+        step_size = random.uniform(0.01, 0.99)
+        octave_scale = random.uniform(0.5, 3.0)
+        steps_per_octave = random.randint(20, 200)
+        deepdream.args.img_name = f"{r_content}-{octaves}-{step_size}-{octave_scale}-{steps_per_octave}".replace(".", "_")
+        deepdream.run(f"contents/{r_content}")
 
 
 if __name__ == "__main__":

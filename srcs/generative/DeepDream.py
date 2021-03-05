@@ -13,12 +13,11 @@ class DeepDream(ArgParser, ImageHandler):
     """
     https://www.tensorflow.org/tutorials/generative/deepdream
     """
-
     layers: list
-    octaves: list = [-2, -1, 0, 1, 2]
-    step_size: float = 0.01
-    steps_per_octave: int = 50
-    octave_scale: float = 1.3
+    octaves: list
+    step_size: float
+    octave_scale: float
+    steps_per_octave: int
 
     def _model_args(self, parser):
         parser.add_argument(
@@ -186,6 +185,7 @@ class DeepDream(ArgParser, ImageHandler):
         return result
 
     def run(self, img_path):
+        print(f"start with {self.args.img_name}")
         original_img = tf.constant(self.get_img(img_path))
         dd_img = self._run(
             img=original_img,

@@ -22,11 +22,7 @@
     <list default="true" id="cc319548-fc64-4a72-bace-37df3f8fb9b6" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/srcs/DeepDream.py" beforeDir="false" afterPath="$PROJECT_DIR$/srcs/generative/DeepDream.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/srcs/GanHandler.py" beforeDir="false" afterPath="$PROJECT_DIR$/srcs/generative/GanHandler.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/srcs/ImageEnhancer.py" beforeDir="false" afterPath="$PROJECT_DIR$/srcs/tools/ImageEnhancer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/srcs/ImageHandler.py" beforeDir="false" afterPath="$PROJECT_DIR$/srcs/tools/ImageHandler.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/srcs/StyleTransfer.py" beforeDir="false" afterPath="$PROJECT_DIR$/srcs/generative/StyleTransfer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/srcs/generative/DeepDream.py" beforeDir="false" afterPath="$PROJECT_DIR$/srcs/generative/DeepDream.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -107,7 +103,7 @@
       <workItem from="1614863716293" duration="8492000" />
       <workItem from="1614933937100" duration="9599000" />
       <workItem from="1614945771152" duration="2100000" />
-      <workItem from="1614952211848" duration="6678000" />
+      <workItem from="1614952211848" duration="7187000" />
     </task>
     <servers />
   </component>
@@ -143,9 +139,9 @@
       <screen x="0" y="0" width="2560" height="1440" />
     </state>
     <state x="1342" y="475" width="598" height="490" key="find.popup/0.0.2560.1440@0.0.2560.1440" timestamp="1614866437839" />
-    <state x="1371" y="331" width="670" height="676" key="search.everywhere.popup" timestamp="1614942757077">
+    <state x="1371" y="331" width="670" height="676" key="search.everywhere.popup" timestamp="1614961132668">
       <screen x="0" y="0" width="2560" height="1440" />
     </state>
-    <state x="1371" y="331" width="670" height="676" key="search.everywhere.popup/0.0.2560.1440@0.0.2560.1440" timestamp="1614942757077" />
+    <state x="1371" y="331" width="670" height="676" key="search.everywhere.popup/0.0.2560.1440@0.0.2560.1440" timestamp="1614961132668" />
   </component>
 </project>
