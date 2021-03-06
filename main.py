@@ -2,8 +2,6 @@ import os
 import time
 import random
 
-from natsort import natsorted
-
 from srcs.generative.DeepDream import DeepDream
 from srcs.generative.GanHandler import GanHandler
 from srcs.generative.StyleTransfer import StyleTransfer
@@ -15,15 +13,9 @@ def run_mnist_gan():
 
 
 def run_style_nn():
-    styles_list = os.listdir("styles")
-    contents_list = os.listdir("contents")
     for i in range(1):
-        r_content = random.randrange(len(contents_list))
-        r_style = random.randrange(len(styles_list))
         s = StyleTransfer(
-            m_name=f"{r_style[:-4]}_{i}_{time.time()}",
-            content_path=f"contents/{contents_list[r_content]}",
-            style_path=f"styles/{styles_list[r_style]}",
+            m_name=f"{time.time()}".replace(".", "_"),
         )
         s.run()
 
@@ -33,7 +25,9 @@ def run_deepdream():
     os.mkdir(f"{deepdream.args.layers[0]}_{deepdream.args.layers[1]}")
     contents_list = os.listdir("contents")
     for i in range(20):
-        deepdream.args.img_name = f"{deepdream.args.layers[0]}_{deepdream.args.layers[1]}/img_{i}"
+        deepdream.args.img_name = (
+            f"{deepdream.args.layers[0]}_{deepdream.args.layers[1]}/img_{i}"
+        )
         r_content = contents_list[random.randrange(len(contents_list))]
         deepdream.run(f"contents/{r_content}")
 
@@ -50,5 +44,5 @@ check:
 	"""
     )
     # run_mnist_gan()
-    # run_style_nn()
-    run_deepdream()
+    run_style_nn()
+    # run_deepdream()

@@ -13,6 +13,7 @@ class DeepDream(ArgParser, ImageHandler):
     """
     https://www.tensorflow.org/tutorials/generative/deepdream
     """
+
     layers: list
     octaves: list
     step_size: float
@@ -39,7 +40,7 @@ class DeepDream(ArgParser, ImageHandler):
         parser.add_argument(
             "-ddo",
             "--deepdream_octaves",
-            type=list,
+            type=int,
             nargs="+",
             help=f"List of octaves iterations",
             default=range(-2, 3),

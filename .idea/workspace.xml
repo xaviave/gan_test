@@ -46,6 +46,7 @@
   <component name="PropertiesComponent">
     <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="node.js.detected.package.eslint" value="true" />
@@ -100,6 +101,8 @@
       <workItem from="1614933937100" duration="9599000" />
       <workItem from="1614945771152" duration="2100000" />
       <workItem from="1614952211848" duration="7295000" />
+      <workItem from="1615049599385" duration="5668000" />
+      <workItem from="1615055328542" duration="2978000" />
     </task>
     <servers />
   </component>

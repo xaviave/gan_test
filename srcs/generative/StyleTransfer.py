@@ -1,5 +1,6 @@
 import os
 import time
+import logging
 
 import tensorflow as tf
 
@@ -7,150 +8,134 @@ from srcs.args.ArgParser import ArgParser
 from srcs.tools.ImageHandler import ImageHandler
 
 
-def gram_matrix(input_tensor):
-    result = tf.linalg.einsum("bijc,bijd->bcd", input_tensor, input_tensor)
-    input_shape = tf.shape(input_tensor)
-    num_locations = tf.cast(input_shape[1] * input_shape[2], tf.float32)
-    return result / (num_locations)
-
-
-def vgg_layers(layer_names):
-    """ Creates a vgg model that returns a list of intermediate output values."""
-    # Load our model. Load pretrained VGG, trained on imagenet data
-    vgg = tf.keras.applications.VGG19(include_top=False, weights="imagenet")
-    vgg.trainable = False
-
-    outputs = [vgg.get_layer(name).output for name in layer_names]
-
-    model = tf.keras.Model([vgg.input], outputs)
-    return model
-
-
-class StyleContentModel(tf.keras.models.Model):
-    def __init__(self, style_layers, content_layers):
-        super(StyleContentModel, self).__init__()
-        self.vgg = vgg_layers(style_layers + content_layers)
-        self.style_layers = style_layers
-        self.content_layers = content_layers
-        self.num_style_layers = len(style_layers)
-        self.vgg.trainable = False
-
-    def call(self, inputs):
-        """
-        Expects float input in [0,1]
-        """
-        inputs = inputs * 255.0
-        preprocessed_input = tf.keras.applications.vgg19.preprocess_input(inputs)
-        outputs = self.vgg(preprocessed_input)
-        style_outputs, content_outputs = (
-            outputs[: self.num_style_layers],
-            outputs[self.num_style_layers :],
-        )
-
-        style_outputs = [gram_matrix(style_output) for style_output in style_outputs]
-
-        content_dict = {
-            content_name: value
-            for content_name, value in zip(self.content_layers, content_outputs)
-        }
-
-        style_dict = {
-            style_name: value
-            for style_name, value in zip(self.style_layers, style_outputs)
-        }
-
-        return {"content": content_dict, "style": style_dict}
-
-
 class StyleTransfer(ArgParser, ImageHandler):
-    # sample tf
-    content_layers = ["block5_conv2"]
-    style_layers = [
-        "block1_conv1",
-        "block2_conv1",
-        "block3_conv1",
-        "block4_conv1",
-        "block5_conv1",
-    ]
-    sample_content_path = tf.keras.utils.get_file(
-        "YellowLabradorLooking_new.jpg",
-        "https://storage.googleapis.com/download.tensorflow.org/example_images/YellowLabradorLooking_new.jpg",
-    )
-    sample_style_path = tf.keras.utils.get_file(
-        "kandinsky5.jpg",
-        "https://storage.googleapis.com/download.tensorflow.org/example_images/Vassily_Kandinsky%2C_1913_-_Composition_7.jpg",
-    )
+    """
+    Use a Style image and applied it on the Content image
+    by getting details and colors from VGG19 layers.
 
-    def _model_args(self, parser):
-        parser.add_argument(
-            "-stvw",
-            "--styletransfer_variation_weight",
-            type=int,
-            help=f"Variation weight between content and style",
-            default=50,
-            dest="variation_weight",
-        )
-        parser.add_argument(
-            "-stcw",
-            "--styletransfer_content_weight",
-            type=float,
-            help=f"Weight applied on the content image",
-            default=1e4,
-            dest="content_weight",
-        )
-        parser.add_argument(
-            "-stsw",
-            "--styletransfer_style_weight",
-            type=float,
-            help=f"Weight applied on the style image",
-            default=1e-2,
-            dest="style_weight",
-        )
-        parser.add_argument(
-            "-ste",
-            "--styletransfer_epochs",
+    Parser args define all the model hyperparameters:
+        - epochs
+        - batch_size
+        - style_layers
+        - style_weight
+        - content_layers
+        - content_weight
+        - variation_weight
+    """
+
+    def _model_args(self, st_parser):
+        st_parser.add_argument(
+            "-e",
+            "--epochs",
             type=int,
             help=f"Number of epoch",
             default=10,
             dest="epochs",
         )
-        parser.add_argument(
-            "-stse",
-            "--styletransfer_step_epochs",
+        st_parser.add_argument(
+            "-bs",
+            "--batch_size",
             type=int,
-            help=f"Number of steps in epoch",
+            help=f"Batch size in epoch",
             default=150,
-            dest="step_in_epochs",
+            dest="batch_size",
+        )
+        st_parser.add_argument(
+            "-sl",
+            "--style_layers",
+            type=str,
+            nargs="+",
+            help=f"StyleTransfer model is created based VGG19 model's layers | List of Layers (style) used in model: [{' - '.join([l.name for l in self.m_.layers])}]",
+            default=[
+                "block1_conv1",
+                "block2_conv1",
+                "block3_conv1",
+                "block4_conv1",
+                "block5_conv1",
+            ],
+            dest="style_layers",
+        )
+        st_parser.add_argument(
+            "-sw",
+            "--style_weight",
+            type=float,
+            help=f"Weight applied on the style image",
+            default=1e-2,
+            dest="style_weight",
+        )
+        st_parser.add_argument(
+            "-cl",
+            "--content_layers",
+            type=str,
+            nargs="+",
+            help=f"StyleTransfer model is created based VGG19 model's layers | List of Layers (content) used in model: [{' - '.join([l.name for l in self.m_.layers])}]",
+            default=["block5_conv2"],
+            dest="content_layers",
+        )
+        st_parser.add_argument(
+            "-cw",
+            "--content_weight",
+            type=float,
+            help=f"Weight applied on the content image",
+            default=1e4,
+            dest="content_weight",
+        )
+        st_parser.add_argument(
+            "-vw",
+            "--variation_weight",
+            type=int,
+            help=f"Variation weight between content and style",
+            default=50,
+            dest="variation_weight",
         )
 
-    def _add_parser_args(self, parser):
-        super()._add_parser_args(parser)
-        parser.add_argument(
-            "-stss",
-            "--styletransfer_show_step",
+    @staticmethod
+    def _options_args(st_parser):
+        st_parser.add_argument(
+            "-ss",
+            "--show_step",
             type=bool,
             help=f"Show img while model iterations",
             default=False,
             dest="show_step",
         )
-        parser.add_argument(
-            "-stsi",
-            "--styletransfer_save_image",
+        st_parser.add_argument(
+            "-d",
+            "--directory",
+            type=str,
+            help="Model directory",
+            default=f"style_transfer_dir/",
+            dest="directory",
+        )
+        st_parser.add_argument(
+            "-f",
+            "--filename",
             type=str,
             help=f"Image filename [if a filename is provided, the file is saved]",
             default=None,
-            dest="img_name",
+            dest="filename",
         )
-        parser.add_argument(
-            "-stls",
-            "--styletransfer_layers",
+
+    def _add_subparser_args(self, parser):
+        super()._add_subparser_args(parser)
+        subparser = parser.add_subparsers(help="StyleTransfer")
+        st_parser = subparser.add_parser(name="ST")
+        st_parser.add_argument(
+            "-sp",
+            "--style_path",
             type=str,
-            nargs="+",
-            help=f"StyleTransfer model is created based VGG19 model's layers\nList of Layers in model: {' - '.join([l.name for l in self.m_.layers])}",
-            default=["mixed3", "mixed5"],
-            dest="layers",
+            help="Style path of the style image",
+            dest="style_path",
         )
-        self._model_args(parser)
+        st_parser.add_argument(
+            "-cp",
+            "--content_path",
+            type=str,
+            help="Content path of the content image",
+            dest="content_path",
+        )
+        self._model_args(st_parser)
+        self._options_args(st_parser)
 
     @staticmethod
     def _high_pass_x_y(image):
@@ -158,9 +143,7 @@ class StyleTransfer(ArgParser, ImageHandler):
         y_var = image[:, 1:, :, :] - image[:, :-1, :, :]
         return x_var, y_var
 
-    def _style_content_loss(self, outputs):
-        style_outputs = outputs["style"]
-        content_outputs = outputs["content"]
+    def _style_content_loss(self, style_outputs, content_outputs):
         style_loss = tf.add_n(
             [
                 tf.reduce_mean((style_outputs[name] - self.style_targets[name]) ** 2)
@@ -189,14 +172,48 @@ class StyleTransfer(ArgParser, ImageHandler):
         x_deltas, y_deltas = self._high_pass_x_y(image)
         return tf.reduce_sum(tf.abs(x_deltas)) + tf.reduce_sum(tf.abs(y_deltas))
 
+    @staticmethod
+    def gram_matrix(input_tensor):
+        result = tf.linalg.einsum("bijc,bijd->bcd", input_tensor, input_tensor)
+        input_shape = tf.shape(input_tensor)
+        num_locations = tf.cast(input_shape[1] * input_shape[2], tf.float32)
+        return result / (num_locations)
+
+    def _exec(self, inputs, opt):
+        """
+        Expects float input in [0,1]
+        """
+        inputs = inputs * 255.0
+        preprocessed_input = tf.keras.applications.vgg19.preprocess_input(inputs)
+        outputs = self.model(preprocessed_input)
+        style_outputs, content_outputs = (
+            outputs[: self.num_style_layers],
+            outputs[self.num_style_layers :],
+        )
+
+        style_outputs = [
+            self.gram_matrix(style_output) for style_output in style_outputs
+        ]
+        if opt == "content":
+            return {
+                content_name: value
+                for content_name, value in zip(
+                    self.args.content_layers, content_outputs
+                )
+            }
+        elif opt == "style":
+            return {
+                style_name: value
+                for style_name, value in zip(self.args.style_layers, style_outputs)
+            }
+
     @tf.function()
-    def train_step(self, image, save: bool = False):
+    def train_step(self, image):
         with tf.GradientTape() as tape:
-            outputs = self.extractor(image)
-            loss = self._style_content_loss(outputs)
-            loss += self.args.total_variation_weight * tf.image.total_variation(image)
-        # if save:
-        #
+            style_outputs = self._exec(image, "style")
+            content_outputs = self._exec(image, "content")
+            loss = self._style_content_loss(style_outputs, content_outputs)
+            loss += self.args.variation_weight * tf.image.total_variation(image)
         grad = tape.gradient(loss, image)
         self.opt.apply_gradients([(grad, image)])
         image.assign(self._clip_0_1(image))
@@ -206,7 +223,7 @@ class StyleTransfer(ArgParser, ImageHandler):
         start = time.time()
         for n in range(self.args.epochs):
             start_e = time.time()
-            for m in range(self.args.steps_per_epoch):
+            for m in range(self.args.batch_size):
                 step += 1
                 self.train_step(image)
                 print(".", end="")
@@ -215,48 +232,50 @@ class StyleTransfer(ArgParser, ImageHandler):
         end = time.time()
         print(f"Total time: {end - start:.1f}")
 
-    def _init_style_content(
-        self,
-        style_path: str,
-        content_path: str,
-    ):
-        self.style_image = self.load_img(style_path)
-        self.content_image = self.load_img(content_path)
+    def _init_nn(self):
+        self.opt = tf.optimizers.Adam(learning_rate=0.02, beta_1=0.99, epsilon=1e-1)
+        self.m_ = tf.keras.applications.VGG19(include_top=False, weights="imagenet")
+        self.m_.trainable = False
+
+    def _init_options(self, m_name):
+        self.m_path = f"{self.args.directory}/{m_name}"
+        logging.info(f"Using dir path: {self.m_path}")
+        os.makedirs(self.m_path)
+
+    def _init_style_content(self):
+        self.style_image = self.load_img(self.args.style_path)
+        self.content_image = self.load_img(self.args.content_path)
         self.content_layers = self.args.content_layers
         self.style_layers = self.args.style_layers
         self.num_style_layers = len(self.style_layers)
         self.num_content_layers = len(self.content_layers)
 
-    def _init_nn(self):
-        self.opt = tf.optimizers.Adam(learning_rate=0.02, beta_1=0.99, epsilon=1e-1)
-        self.vgg = tf.keras.applications.VGG19(include_top=False, weights="imagenet")
-
     def _init_target(self):
-        self.extractor = StyleContentModel(self.style_layers, self.content_layers)
-        self.style_targets = self.extractor(self.style_image)["style"]
-        self.content_targets = self.extractor(self.content_image)["content"]
+        self.model = tf.keras.Model(
+            [self.m_.input],
+            [
+                self.m_.get_layer(n).output
+                for n in self.args.content_layers + self.args.style_layers
+            ],
+        )
+        self.style_targets = self._exec(self.style_image, "style")
+        self.content_targets = self._exec(self.content_image, "content")
 
-    def __init__(
-        self,
-        m_name: str,
-        content_path: str = sample_content_path,
-        style_path: str = sample_style_path,
-    ):
+    def __init__(self, m_name: str):
         """
         https://www.tensorflow.org/tutorials/generative/style_transfer
         """
-        super().__init__()
-        self.m_path = f"images/{m_name}"
-        os.makedirs(self.m_path)
-        self.content_path = content_path
-        self._init_style_content(style_path, content_path)
         self._init_nn()
+        super().__init__()
+        self._init_options(m_name)
+        self._init_style_content()
         self._init_target()
 
-    def run(self, ret: bool = False, save: bool = True):
+    def run(self, ret: bool = False):
         image = tf.Variable(self.content_image)
         self._train(image)
-        if save:
-            self.tensor_to_image(image).save(f"{self.m_path}/stylized-image.png")
+        image = self.tensor_to_image(image)
+        if self.args.filename is not None:
+            image.save(f"{self.m_path}/{self.args.filename}.png")
         if ret:
             return image
