@@ -266,7 +266,7 @@ class StyleTransfer(ArgParser, ImageHandler):
         https://www.tensorflow.org/tutorials/generative/style_transfer
         """
         self._init_nn()
-        super().__init__()
+        super().__init__(prog="StyleTransfer")
         self._init_options(m_name)
         self._init_style_content()
         self._init_target()

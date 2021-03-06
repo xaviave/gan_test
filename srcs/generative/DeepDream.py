@@ -1,3 +1,4 @@
+import os
 import time
 import PIL.Image
 
@@ -20,69 +21,90 @@ class DeepDream(ArgParser, ImageHandler):
     octave_scale: float
     steps_per_octave: int
 
-    def _model_args(self, parser):
-        parser.add_argument(
-            "-dds",
-            "--deepdream_step_size",
+    def _model_args(self, dd_parser):
+        dd_parser.add_argument(
+            "-e",
+            "--epochs",
+            type=int,
+            help=f"Number of epoch in each octaves",
+            default=100,
+            dest="epochs",
+        )
+        dd_parser.add_argument(
+            "-s",
+            "--step_size",
             type=float,
             help=f"Gradient Descent step size",
             default=1e-2,
             dest="step_size",
         )
-        parser.add_argument(
-            "-ddos",
-            "--deepdream_octave_scale",
-            type=float,
-            help=f"Octave scaling",
-            default=1.3,
-            dest="octave_scale",
-        )
-        parser.add_argument(
-            "-ddo",
-            "--deepdream_octaves",
+        dd_parser.add_argument(
+            "-o",
+            "--octaves",
             type=int,
             nargs="+",
             help=f"List of octaves iterations",
             default=range(-2, 3),
             dest="octaves",
         )
-        parser.add_argument(
-            "-dde",
-            "--deepdream_epochs",
-            type=int,
-            help=f"Number of epoch in each octaves",
-            default=100,
-            dest="epochs",
+        dd_parser.add_argument(
+            "-os",
+            "--octave_scale",
+            type=float,
+            help=f"Octave scaling",
+            default=1.3,
+            dest="octave_scale",
         )
-
-    def _add_parser_args(self, parser):
-        super()._add_parser_args(parser)
-        parser.add_argument(
-            "-ddss",
-            "--deepdream_show_step",
-            type=bool,
-            help=f"Show img while model iterations",
-            default=False,
-            dest="show_step",
-        )
-        parser.add_argument(
-            "-ddsi",
-            "--deepdream_save_image",
-            type=str,
-            help=f"Image filename [if a filename is provided, the file is saved]",
-            default=None,
-            dest="img_name",
-        )
-        parser.add_argument(
-            "-ddls",
-            "--deepdream_layers",
+        dd_parser.add_argument(
+            "-ls",
+            "--layers",
             type=str,
             nargs="+",
             help=f"DeepDream model is created based InceptionV3 model's layers\nList of Layers in model: {' - '.join([l.name for l in self.m_.layers])}",
             default=["mixed3", "mixed5"],
             dest="layers",
         )
-        self._model_args(parser)
+
+    @staticmethod
+    def _options_args(dd_parser):
+        dd_parser.add_argument(
+            "-ss",
+            "--show_step",
+            type=bool,
+            help=f"Show img while model iterations",
+            default=False,
+            dest="show_step",
+        )
+        dd_parser.add_argument(
+            "-d",
+            "--directory",
+            type=str,
+            help="Model directory",
+            default=f"deepdream_dir/",
+            dest="directory",
+        )
+        dd_parser.add_argument(
+            "-f",
+            "--filename",
+            type=str,
+            help=f"Image filename [if a filename is provided, the file is saved]",
+            default=None,
+            dest="filename",
+        )
+
+    def _add_subparser_args(self, parser):
+        super()._add_subparser_args(parser)
+        subparser = parser.add_subparsers(help="DeepDream")
+        dd_parser = subparser.add_parser(name="DD")
+        dd_parser.add_argument(
+            "-cp",
+            "--content_path",
+            type=str,
+            help="Content path of the content image",
+            dest="content_path",
+        )
+        self._options_args(dd_parser)
+        self._model_args(dd_parser)
 
     @staticmethod
     def _random_roll(img, maxroll):
@@ -149,6 +171,7 @@ class DeepDream(ArgParser, ImageHandler):
             include_top=False, weights="imagenet"
         )
         super().__init__(prog="DeepDream")
+        os.makedirs(self.args.directory)
         layers = [self.m_.get_layer(name).output for name in self.args.layers]
         self.model = tf.keras.Model(inputs=self.m_.input, outputs=layers)
 
@@ -185,8 +208,9 @@ class DeepDream(ArgParser, ImageHandler):
         result = self.normalize_img(img)
         return result
 
-    def run(self, img_path):
-        print(f"start with {self.args.img_name}")
+    def run(self, img_path: str = None):
+        if img_path is None:
+            img_path = self.args.content_path
         original_img = tf.constant(self.get_img(img_path))
         dd_img = self._run(
             img=original_img,
@@ -195,7 +219,7 @@ class DeepDream(ArgParser, ImageHandler):
             octave_scale=self.args.octave_scale,
             steps_per_octave=self.args.epochs,
         )
-        if self.args.img_name is not None:
+        if self.args.filename is not None:
             dd_img = tf.image.resize(dd_img, tf.shape(original_img)[:-1])
             dd_img = tf.image.convert_image_dtype(dd_img / 255.0, dtype=tf.uint8)
-            PIL.Image.fromarray(np.array(dd_img)).save(f"{self.args.img_name}.png")
+            PIL.Image.fromarray(np.array(dd_img)).save(f"{self.args.directory}/{self.args.filename}.png")

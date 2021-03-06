@@ -25,7 +25,7 @@ def run_deepdream():
     os.mkdir(f"{deepdream.args.layers[0]}_{deepdream.args.layers[1]}")
     contents_list = os.listdir("contents")
     for i in range(20):
-        deepdream.args.img_name = (
+        deepdream.args.filename = (
             f"{deepdream.args.layers[0]}_{deepdream.args.layers[1]}/img_{i}"
         )
         r_content = contents_list[random.randrange(len(contents_list))]
