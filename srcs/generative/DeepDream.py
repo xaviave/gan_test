@@ -1,5 +1,6 @@
 import os
 import time
+import logging
 import PIL.Image
 
 import numpy as np
@@ -204,7 +205,7 @@ class DeepDream(ArgParser, ImageHandler):
             if self.args.show_step:
                 plt.imshow(img)
                 plt.show()
-            print(f"time: {time.time() - start:.2f}s")
+            logging.info(f"Octave {octave} - time: {time.time() - start:.2f}s")
         result = self.normalize_img(img)
         return result
 
@@ -222,4 +223,6 @@ class DeepDream(ArgParser, ImageHandler):
         if self.args.filename is not None:
             dd_img = tf.image.resize(dd_img, tf.shape(original_img)[:-1])
             dd_img = tf.image.convert_image_dtype(dd_img / 255.0, dtype=tf.uint8)
-            PIL.Image.fromarray(np.array(dd_img)).save(f"{self.args.directory}/{self.args.filename}.png")
+            PIL.Image.fromarray(np.array(dd_img)).save(
+                f"{self.args.directory}/{self.args.filename}.png"
+            )

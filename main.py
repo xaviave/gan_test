@@ -9,7 +9,7 @@ from srcs.generative.StyleTransfer import StyleTransfer
 
 def run_mnist_gan():
     gan = GanHandler()
-    gan.train(gan.dataset)
+    gan.train()
 
 
 def run_style_nn():
@@ -43,6 +43,6 @@ check:
 	- tensorflow_hub
 	"""
     )
-    # run_mnist_gan()
-    run_style_nn()
+    run_mnist_gan()
+    # run_style_nn()
     # run_deepdream()

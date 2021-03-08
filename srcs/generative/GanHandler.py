@@ -1,7 +1,10 @@
 import os
+import PIL
 import time
+import logging
 
 import tensorflow as tf
+import matplotlib.pyplot as plt
 from tensorflow.keras import layers
 
 from srcs.tools.ImageHandler import ImageHandler
@@ -15,7 +18,8 @@ class GanHandler(ImageHandler):
     NUM_EX_TO_GENERATE = 16
     checkpoint_dir = "./training_checkpoints"
 
-    def _generate_discriminator_model(self):
+    @staticmethod
+    def _generate_discriminator_model():
         model = tf.keras.Sequential()
         model.add(
             layers.Conv2D(
@@ -32,9 +36,10 @@ class GanHandler(ImageHandler):
         model.add(layers.Flatten())
         model.add(layers.Dense(1))
 
-        self.discriminator = model
+        return model
 
-    def _generate_generator_model(self):
+    @staticmethod
+    def _generate_generator_model():
         model = tf.keras.Sequential()
         model.add(layers.Dense(7 * 7 * 256, use_bias=False, input_shape=(100,)))
         model.add(layers.BatchNormalization())
@@ -72,32 +77,18 @@ class GanHandler(ImageHandler):
             )
         )
         assert model.output_shape == (None, 28, 28, 1)
-        self.generator = model
 
-    def _init_dataset(self):
-        (train_images, train_labels), (_, _) = tf.keras.datasets.mnist.load_data()
-        train_images = train_images.reshape(train_images.shape[0], 28, 28, 1).astype(
-            "float32"
-        )
-        self.train_images = (train_images - 127.5) / 127.5
-        self.dataset = (
-            tf.data.Dataset.from_tensor_slices(train_images)
-            .shuffle(self.BUFFER_SIZE)
-            .batch(self.BATCH_SIZE)
-        )
+        return model
 
-    def _init_checkpoint(self):
-        self.checkpoint_prefix = os.path.join(self.checkpoint_dir, "ckpt")
-        self.checkpoint = tf.train.Checkpoint(
-            generator=self.generator,
-            discriminator=self.discriminator,
-            generator_optimizer=self.generator_optimizer,
-            discriminator_optimizer=self.discriminator_optimizer,
-        )
+    def _discriminator_loss(self, real_output, fake_output):
+        real_loss = self.cross_entropy(tf.ones_like(real_output), real_output)
+        fake_loss = self.cross_entropy(tf.zeros_like(fake_output), fake_output)
+        total_loss = real_loss + fake_loss
+        return total_loss
 
-    def _init_optimizer(self):
-        self.generator_optimizer = tf.keras.optimizers.Adam(1e-4)
-        self.discriminator_optimizer = tf.keras.optimizers.Adam(1e-4)
+    def _generator_loss(self, fake_output):
+        logging.warning(f"fake output {fake_output}")
+        return self.cross_entropy(tf.ones_like(fake_output), fake_output)
 
     @tf.function
     def _train_step(self, images):
@@ -109,8 +100,10 @@ class GanHandler(ImageHandler):
             real_output = self.discriminator(images, training=True)
             fake_output = self.discriminator(generated_images, training=True)
 
-            gen_loss = self.generator_loss(fake_output)
-            disc_loss = self.discriminator_loss(real_output, fake_output)
+            gen_loss = self._generator_loss(fake_output)
+            logging.warning(f"GENERATOR LOSS: {gen_loss}")
+            disc_loss = self._discriminator_loss(real_output, fake_output)
+            logging.warning(f"DISCRIMINATOR LOSS: {disc_loss}")
 
         gradients_of_generator = gen_tape.gradient(
             gen_loss, self.generator.trainable_variables
@@ -126,40 +119,72 @@ class GanHandler(ImageHandler):
             zip(gradients_of_discriminator, self.discriminator.trainable_variables)
         )
 
+    def _init_dataset(self):
+        (train_images, train_labels), (_, _) = tf.keras.datasets.mnist.load_data()
+        train_images = train_images.reshape(train_images.shape[0], 28, 28, 1).astype("float32")
+        train_images = (train_images - 127.5) / 127.5
+        self.train_dataset = (
+            tf.data.Dataset.from_tensor_slices(train_images)
+            .shuffle(self.BUFFER_SIZE)
+            .batch(self.BATCH_SIZE)
+        )
+
+    def _init_optimizer(self):
+        self.generator_optimizer = tf.keras.optimizers.Adam(1e-4)
+        self.discriminator_optimizer = tf.keras.optimizers.Adam(1e-4)
+
+    def _init_checkpoint(self):
+        self.checkpoint_prefix = os.path.join(self.checkpoint_dir, "ckpt")
+        self.checkpoint = tf.train.Checkpoint(
+            generator=self.generator,
+            discriminator=self.discriminator,
+            generator_optimizer=self.generator_optimizer,
+            discriminator_optimizer=self.discriminator_optimizer,
+        )
+
     def __init__(self):
+        super().__init__()
         self.noise = tf.random.normal([1, 100])
         self._init_dataset()
-        self._generate_generator_model()
-        self._generate_discriminator_model()
+        self.generator = self._generate_generator_model()
+        self.discriminator = self._generate_discriminator_model()
         self.cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
         self._init_optimizer()
         self._init_checkpoint()
 
-    def discriminator_loss(self, real_output, fake_output):
-        real_loss = self.cross_entropy(tf.ones_like(real_output), real_output)
-        fake_loss = self.cross_entropy(tf.zeros_like(fake_output), fake_output)
-        total_loss = real_loss + fake_loss
-        return total_loss
+    def generate_and_save_images(self, epoch, test_input):
+        # Notice `training` is set to False.
+        # This is so all layers run in inference mode (batchnorm).
+        predictions = self.generator(test_input, training=False)
+        # fig = plt.figure(figsize=(4, 4))
+        for i in range(predictions.shape[0]):
+            plt.subplot(4, 4, i + 1)
+            plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap="gray")
+            plt.axis("off")
+        plt.savefig(f"image_at_epoch_{epoch:04d}.png")
 
-    def generator_loss(self, fake_output):
-        return self.cross_entropy(tf.ones_like(fake_output), fake_output)
-
-    def train(self, dataset, epochs: int = EPOCHS):
+    def train(self, epochs: int = EPOCHS):
         seed = tf.random.normal([self.NUM_EX_TO_GENERATE, self.NOISE_DIM])
         for epoch in range(epochs):
             start = time.time()
-            for image_batch in dataset:
+
+            for image_batch in self.train_dataset:
                 self._train_step(image_batch)
-            self.generate_and_save_images(self.generator, epoch + 1, seed)
-            # Save the model every 15 epochs
+
+            self.generate_and_save_images(epoch + 1, seed)
+
             if (epoch + 1) % 15 == 0:
                 self.checkpoint.save(file_prefix=self.checkpoint_prefix)
+            logging.info(f"Time epoch {epoch + 1}: {time.time() - start:.1f}s")
 
-            print(f"Time for epoch {epoch + 1} is {time.time() - start} sec")
-        self.generate_and_save_images(self.generator, epochs, seed)
+    def generate(self, noise=None, show: bool = False):
         self.checkpoint.restore(tf.train.latest_checkpoint(self.checkpoint_dir))
-
-    def generate(self, noise=None):
+        start = time.time()
         if noise is None:
             noise = tf.random.normal([1, 100])
-        return self.generator(noise, training=False)
+        generated_img = self.generator(noise, training=False)[0, :, :, 0]
+        logging.info(f"Generation time: {time.time() - start:.1f}s")
+        if show:
+            plt.imshow(generated_img, cmap="gray")
+            plt.show()
+        return generated_img

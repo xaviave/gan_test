@@ -1,4 +1,5 @@
 natsort
+pillow
 opencv-python
 tensorflow
 tensorflow_gan

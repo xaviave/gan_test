@@ -226,11 +226,10 @@ class StyleTransfer(ArgParser, ImageHandler):
             for m in range(self.args.batch_size):
                 step += 1
                 self.train_step(image)
-                print(".", end="")
             self.tensor_to_image(image).save(f"{self.m_path}/row_image_step_{step}.png")
-            print(f"\nTrain step: {step} | time epoch: {time.time() - start_e}")
+            logging.info(f"Step: {step} | time epoch: {time.time() - start_e:.1f}s")
         end = time.time()
-        print(f"Total time: {end - start:.1f}")
+        logging.info(f"Total time: {end - start:.1f}s")
 
     def _init_nn(self):
         self.opt = tf.optimizers.Adam(learning_rate=0.02, beta_1=0.99, epsilon=1e-1)
