@@ -1,5 +1,4 @@
 import os
-import PIL
 import time
 import logging
 
@@ -7,16 +6,42 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from tensorflow.keras import layers
 
+from srcs.args.ArgParser import ArgParser
 from srcs.tools.ImageHandler import ImageHandler
 
 
-class GanHandler(ImageHandler):
+class GanHandler(ArgParser, ImageHandler):
     EPOCHS = 50
     NOISE_DIM = 100
     BATCH_SIZE = 256
     BUFFER_SIZE = 60000
     NUM_EX_TO_GENERATE = 16
     checkpoint_dir = "./training_checkpoints"
+
+    @staticmethod
+    def _options_args(gan_parser):
+        gan_parser.add_argument(
+            "-d",
+            "--directory",
+            type=str,
+            help="Model directory",
+            default=f"mnist_gan_dir/",
+            dest="directory",
+        )
+        gan_parser.add_argument(
+            "-f",
+            "--filename",
+            type=str,
+            help=f"Image filename [if a filename is provided, the file is saved]",
+            default=None,
+            dest="filename",
+        )
+
+    def _add_subparser_args(self, parser):
+        super()._add_subparser_args(parser)
+        subparser = parser.add_subparsers(help="MNIST_GAN")
+        gan_parser = subparser.add_parser(name="GAN")
+        self._options_args(gan_parser)
 
     @staticmethod
     def _generate_discriminator_model():
@@ -120,11 +145,14 @@ class GanHandler(ImageHandler):
         )
 
     def _init_dataset(self):
-        (train_images, train_labels), (_, _) = tf.keras.datasets.mnist.load_data()
-        train_images = train_images.reshape(train_images.shape[0], 28, 28, 1).astype("float32")
-        train_images = (train_images - 127.5) / 127.5
+        (tmp_train_imgs, _), (_, _) = tf.keras.datasets.mnist.load_data()
+        tmp_train_imgs = tmp_train_imgs.reshape(tmp_train_imgs.shape[0], 28, 28, 1).astype(
+            "float32"
+        )
+        # preprocess images
+        tmp_train_imgs = (tmp_train_imgs - 127.5) / 127.5
         self.train_dataset = (
-            tf.data.Dataset.from_tensor_slices(train_images)
+            tf.data.Dataset.from_tensor_slices(tmp_train_imgs)
             .shuffle(self.BUFFER_SIZE)
             .batch(self.BATCH_SIZE)
         )
@@ -142,10 +170,15 @@ class GanHandler(ImageHandler):
             discriminator_optimizer=self.discriminator_optimizer,
         )
 
+    def _init_options(self):
+        self.m_path = os.path.join(self.args.directory, str(time.time()).replace(".", "_"))
+        logging.info(f"Using dir path: {self.m_path}")
+        os.makedirs(self.m_path)
+
     def __init__(self):
         super().__init__()
-        self.noise = tf.random.normal([1, 100])
         self._init_dataset()
+        self._init_options()
         self.generator = self._generate_generator_model()
         self.discriminator = self._generate_discriminator_model()
         self.cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
@@ -161,7 +194,7 @@ class GanHandler(ImageHandler):
             plt.subplot(4, 4, i + 1)
             plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap="gray")
             plt.axis("off")
-        plt.savefig(f"image_at_epoch_{epoch:04d}.png")
+        plt.savefig(f"{self.m_path}/image_at_epoch_{epoch:04d}.png")
 
     def train(self, epochs: int = EPOCHS):
         seed = tf.random.normal([self.NUM_EX_TO_GENERATE, self.NOISE_DIM])
@@ -184,6 +217,8 @@ class GanHandler(ImageHandler):
             noise = tf.random.normal([1, 100])
         generated_img = self.generator(noise, training=False)[0, :, :, 0]
         logging.info(f"Generation time: {time.time() - start:.1f}s")
+        if self.args.filename is not None:
+            self.save_gif(self.m_path)
         if show:
             plt.imshow(generated_img, cmap="gray")
             plt.show()

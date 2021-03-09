@@ -134,8 +134,8 @@ class StyleTransfer(ArgParser, ImageHandler):
             help="Content path of the content image",
             dest="content_path",
         )
-        self._model_args(st_parser)
         self._options_args(st_parser)
+        self._model_args(st_parser)
 
     @staticmethod
     def _high_pass_x_y(image):
@@ -237,9 +237,10 @@ class StyleTransfer(ArgParser, ImageHandler):
         self.m_.trainable = False
 
     def _init_options(self, m_name):
-        self.m_path = f"{self.args.directory}/{m_name}"
-        logging.info(f"Using dir path: {self.m_path}")
+        logging.warning(self.args)
+        self.m_path = os.path.join(self.args.directory, m_name)
         os.makedirs(self.m_path)
+        logging.info(f"Using dir path: {self.m_path}")
 
     def _init_style_content(self):
         self.style_image = self.load_img(self.args.style_path)
@@ -260,12 +261,14 @@ class StyleTransfer(ArgParser, ImageHandler):
         self.style_targets = self._exec(self.style_image, "style")
         self.content_targets = self._exec(self.content_image, "content")
 
-    def __init__(self, m_name: str):
+    def __init__(self, m_name: str, style: str):
         """
         https://www.tensorflow.org/tutorials/generative/style_transfer
         """
         self._init_nn()
         super().__init__(prog="StyleTransfer")
+        if style is not None:
+            self.args.style_path = style
         self._init_options(m_name)
         self._init_style_content()
         self._init_target()

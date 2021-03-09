@@ -25,16 +25,18 @@ class ImageHandler(ImageEnhancer):
 
     @staticmethod
     def load_img(path_to_img):
-        max_dim = 512
+        max_dim = 720
         img = tf.io.read_file(path_to_img)
         img = tf.image.decode_image(img, channels=3)
         img = tf.image.convert_image_dtype(img, tf.float32)
 
+        print("shape 1", tf.shape(img))
         shape = tf.cast(tf.shape(img)[:-1], tf.float32)
         long_dim = max(shape)
         scale = max_dim / long_dim
 
         new_shape = tf.cast(shape * scale, tf.int32)
+        print("new_shape", new_shape)
 
         img = tf.image.resize(img, new_shape)
         img = img[tf.newaxis, :]
@@ -57,11 +59,12 @@ class ImageHandler(ImageEnhancer):
             tensor = tensor[0]
         return PIL.Image.fromarray(tensor)
 
-    def save_gif(self, path):
+    def save_gif(self, path, enhance: bool = False):
         anim_file = f"{path}/images.gif"
         filenames = glob.glob(f"{path}/*.png")
-        for x in filenames:
-            self.enhance_image(x)
+        if enhance:
+            for x in filenames:
+                self.enhance_image(x)
         img, *imgs = [PIL.Image.open(f) for f in natsorted(filenames)]
         img.save(
             fp=anim_file,
