@@ -29,7 +29,7 @@ class StyleTransfer(ArgParser, ImageHandler):
             "--epochs",
             type=int,
             help=f"Number of epoch",
-            default=10,
+            default=25,
             dest="epochs",
         )
         st_parser.add_argument(
@@ -37,7 +37,7 @@ class StyleTransfer(ArgParser, ImageHandler):
             "--batch_size",
             type=int,
             help=f"Batch size in epoch",
-            default=150,
+            default=250,
             dest="batch_size",
         )
         st_parser.add_argument(
@@ -47,11 +47,11 @@ class StyleTransfer(ArgParser, ImageHandler):
             nargs="+",
             help=f"StyleTransfer model is created based VGG19 model's layers | List of Layers (style) used in model: [{' - '.join([l.name for l in self.m_.layers])}]",
             default=[
-                "block1_conv1",
-                "block2_conv1",
                 "block3_conv1",
-                "block4_conv1",
+                "block3_conv2",
+                "block4_conv2",
                 "block5_conv1",
+                "block5_conv2",
             ],
             dest="style_layers",
         )
@@ -60,7 +60,7 @@ class StyleTransfer(ArgParser, ImageHandler):
             "--style_weight",
             type=float,
             help=f"Weight applied on the style image",
-            default=1e-2,
+            default=2.0,
             dest="style_weight",
         )
         st_parser.add_argument(
@@ -77,7 +77,7 @@ class StyleTransfer(ArgParser, ImageHandler):
             "--content_weight",
             type=float,
             help=f"Weight applied on the content image",
-            default=1e4,
+            default=6500,
             dest="content_weight",
         )
         st_parser.add_argument(

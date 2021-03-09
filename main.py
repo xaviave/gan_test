@@ -3,9 +3,9 @@ import time
 import random
 
 from srcs.generative.DeepDream import DeepDream
+from srcs.tools.ImageHandler import ImageHandler
 from srcs.generative.GanHandler import GanHandler
 from srcs.generative.StyleTransfer import StyleTransfer
-# from tensorflow.contrib.memory_stats.python.ops.memory_stats_ops import BytesInUse
 
 
 def run_mnist_gan():
@@ -17,8 +17,7 @@ def run_style_nn():
     contents_list = os.listdir("styles")
     for c in contents_list:
         s = StyleTransfer(
-            m_name=f"{time.time()}".replace(".", "_"),
-            style=f"styles/{c}"
+            m_name=f"{time.time()}".replace(".", "_"), style=f"styles/{c}"
         )
         s.run()
 
@@ -32,11 +31,14 @@ def run_deepdream():
             f"{deepdream.args.layers[0]}_{deepdream.args.layers[1]}/img_{i}"
         )
         r_content = contents_list[random.randrange(len(contents_list))]
-        #with tf.device('/device:GPU:0'):  # Replace with device you are interested in
-        #    bytes_in_use = BytesInUse()
-        #with tf.Session() as sess:
-        #    print(sess.run(bytes_in_use))
         deepdream.run(f"contents/{r_content}")
+
+
+def make_gif_from_parent():
+    dir = "style_transfer_dir"
+    a = ImageHandler()
+    for l in os.listdir(dir):
+        a.save_gif(f"{dir}/{l}")
 
 
 if __name__ == "__main__":
@@ -50,6 +52,7 @@ check:
 	- tensorflow_hub
 	"""
     )
+    # make_gif_from_parent()
     run_mnist_gan()
     # run_style_nn()
     # run_deepdream()
