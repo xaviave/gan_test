@@ -51,15 +51,19 @@ class GanHandler(ArgParser, ImageHandler):
                 64, (5, 5), strides=(2, 2), padding="same", input_shape=[28, 28, 1]
             )
         )
+        assert model.output_shape == (None, 14, 14, 64)
         model.add(layers.LeakyReLU())
         model.add(layers.Dropout(0.3))
 
         model.add(layers.Conv2D(128, (5, 5), strides=(2, 2), padding="same"))
+        assert model.output_shape == (None, 7, 7, 128)
         model.add(layers.LeakyReLU())
         model.add(layers.Dropout(0.3))
 
         model.add(layers.Flatten())
+        assert model.output_shape == (None, 7 * 7 * 128)
         model.add(layers.Dense(1))
+        assert model.output_shape == (None, 1)
 
         return model
 
